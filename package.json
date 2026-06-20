@@ -11,16 +11,19 @@
     "lint": "pnpm -r lint",
     "clean": "pnpm -r clean",
     "benchmark": "node benchmarks/run-benchmark.mjs",
+    "changeset": "changeset",
+    "version-packages": "changeset version && pnpm install --lockfile-only",
     "release:check": "node scripts/release-check.mjs",
     "release:publish:dry-run": "node scripts/release-publish.mjs --dry-run",
     "release:publish": "node scripts/release-publish.mjs"
   },
   "devDependencies": {
-    "typescript": "^5.4.0",
+    "@changesets/cli": "^2.31.0",
     "@types/node": "^20.0.0",
-    "vitest": "^1.6.0",
-    "eslint": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "@typescript-eslint/eslint-plugin": "^7.0.0"
+    "eslint": "^9.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
   }
 }

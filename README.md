@@ -182,6 +182,17 @@ pnpm test          # Run all tests
 pnpm test:watch    # Run in watch mode
 ```
 
+## Releasing
+
+```bash
+pnpm changeset
+pnpm run version-packages
+pnpm run release:check
+pnpm run release:publish:dry-run
+```
+
+See [docs/RELEASING.md](./docs/RELEASING.md) for the full npm release workflow.
+
 ***
 
 ## Architecture

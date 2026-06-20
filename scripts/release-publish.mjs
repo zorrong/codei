@@ -72,10 +72,21 @@ function main() {
 
   run("node", ["scripts/release-check.mjs"], rootDir)
 
+  if (isDryRun) {
+    console.log("Dry-run publish order:")
+    for (const pkg of packages) {
+      console.log(`- ${pkg.manifest.name}@${pkg.manifest.version}`)
+    }
+    console.log("")
+    console.log("Commands that would run:")
+    for (const pkg of packages) {
+      console.log(`- (cd ${pkg.dir} && pnpm publish --access public)`)
+    }
+    return
+  }
+
   for (const pkg of packages) {
     const args = ["publish", "--access", "public"]
-    if (isDryRun) args.push("--dry-run")
-
     run("pnpm", args, pkg.dir)
   }
 }
