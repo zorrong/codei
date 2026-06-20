@@ -168,7 +168,7 @@ Project-level configuration. Recommended: keep this file minimal and put API/pro
 
 ### `.env`
 
-Recommended per-project API configuration.
+Optional per-project override configuration.
 
 ```env
 NVIDIA_API_KEY=nvapi-...
@@ -180,9 +180,20 @@ CODEINDEX_BASE_URL=https://integrate.api.nvidia.com/v1
 
 If `NVIDIA_API_KEY` or the NVIDIA base URL is present, `codeindex` can infer the NVIDIA provider automatically.
 
+### `~/.codeindex/.env`
+
+Recommended global runtime configuration when you want to run `codeindex setup` once and reuse it across all projects.
+
+```env
+CODEINDEX_PROVIDER=nvidia
+CODEINDEX_API_KEY=nvapi-...
+CODEINDEX_MODEL=minimaxai/minimax-m3
+CODEINDEX_BASE_URL=https://integrate.api.nvidia.com/v1
+```
+
 ### `~/.codeindex/config.json`
 
-Optional global configuration (created by `codeindex setup`).
+Backward-compatible global configuration (also created by `codeindex setup`).
 
 ```json
 {

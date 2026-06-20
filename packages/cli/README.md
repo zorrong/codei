@@ -10,9 +10,8 @@
 # Install
 npm install -g @codeindex/cli
 
-# Configure your project's .env
-cp .env.example .env
-# then edit .env with your API key
+# Setup once globally
+codeindex setup
 
 # Index your project
 cd your-project
@@ -26,7 +25,7 @@ codeindex query "How does authentication work?"
 
 | Command | Description |
 |---------|-------------|
-| `codeindex setup` | Optional global configuration |
+| `codeindex setup` | Global runtime configuration (recommended) |
 | `codeindex init [path]` | Initialize project |
 | `codeindex index [path]` | Build/rebuild index |
 | `codeindex query "<text>"` | Query the index |
@@ -34,14 +33,16 @@ codeindex query "How does authentication work?"
 | `codeindex status [path]` | Check index health |
 | `codeindex serve [path]` | HTTP server for IDE integration |
 
-## Recommended Project Config
+## Global Config
 
 ```env
-NVIDIA_API_KEY=nvapi-...
+CODEINDEX_PROVIDER=nvidia
+CODEINDEX_API_KEY=nvapi-...
+CODEINDEX_MODEL=minimaxai/minimax-m3
 CODEINDEX_BASE_URL=https://integrate.api.nvidia.com/v1
 ```
 
-`codeindex` automatically reads `.env` from the project root, so in most cases you do not need `codeindex setup`.
+`codeindex setup` writes global config to `~/.codeindex/config.json` and `~/.codeindex/.env`, so in most cases you only need to configure it once.
 
 ## Features
 

@@ -19,6 +19,7 @@ import { registerStatusCommand } from "./commands/status.js"
 import { registerServeCommand } from "./commands/serve.js"
 import { registerInitCommand } from "./commands/init.js"
 import { registerSetupCommand } from "./commands/setup.js"
+import { registerDoctorCommand } from "./commands/doctor.js"
 
 const program = new Command()
 
@@ -37,5 +38,6 @@ registerQueryCommand(program)
 registerUpdateCommand(program)
 registerStatusCommand(program)
 registerServeCommand(program)
+registerDoctorCommand(program)
 
 program.parse()

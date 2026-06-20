@@ -30,8 +30,6 @@ export function registerInitCommand(program: Command): void {
       // Load global config để lấy defaults
       const currentConfig = loadConfig(projectRoot)
       
-      let provider = currentConfig.provider
-      let model = currentConfig.model
       let indexDir = currentConfig.indexDir
 
       // Nếu global config đã có đủ thông tin (apiKey + provider), skip hỏi
@@ -45,25 +43,7 @@ export function registerInitCommand(program: Command): void {
 
         console.log("\n🔧 codeindex project init\n")
         console.log(`⚠️  Chưa tìm thấy cấu hình toàn cục. Bạn nên chạy 'codeindex setup' trước.`)
-        console.log(`   Hoặc tạo file .env trong project root, ví dụ: NVIDIA_API_KEY=... \n`)
-
-        const providerInput = await ask(
-          rl,
-          `LLM provider [openai/anthropic/google/nvidia/custom/ollama] (mặc định: ${provider}): `
-        )
-        provider = (providerInput.trim() || provider) as any
-
-        const modelDefaults: Record<string, string> = {
-          openai: "gpt-4o",
-          anthropic: "claude-sonnet-4-5",
-          google: "gemini-1.5-flash",
-          nvidia: "minimaxai/minimax-m3",
-          custom: "gpt-4o-compatible",
-          ollama: "llama3.2",
-        }
-        const defaultModel = modelDefaults[provider] ?? "gpt-4o"
-        const modelInput = await ask(rl, `Model (mặc định: ${model || defaultModel}): `)
-        model = modelInput.trim() || model || defaultModel
+        console.log(`   Lệnh 'setup' sẽ lưu vào ~/.codeindex/.env và dùng cho mọi project sau này.\n`)
 
         const indexDirInput = await ask(rl, `Index directory (mặc định: ${indexDir}): `)
         indexDir = indexDirInput.trim() || indexDir
@@ -76,8 +56,6 @@ export function registerInitCommand(program: Command): void {
       }
 
       const config: any = {
-        provider,
-        model,
         indexDir,
       }
 
@@ -96,21 +74,11 @@ export function registerInitCommand(program: Command): void {
       console.log(`\n✅ Đã tạo .codeindex.json`)
       console.log(`\nNext steps:`)
 
-      const envMap: Record<string, string> = {
-        openai: "OPENAI_API_KEY",
-        anthropic: "ANTHROPIC_API_KEY",
-        google: "GOOGLE_API_KEY",
-        nvidia: "NVIDIA_API_KEY",
-        custom: "CUSTOM_API_KEY",
-        ollama: "(không cần key)",
-      }
-      const envVar = envMap[provider] ?? "OPENAI_API_KEY"
-
-      if (currentConfig.apiKey || provider === "ollama") {
+      if (currentConfig.apiKey || currentConfig.provider === "ollama") {
         console.log(`   1. Build the index : codeindex index .`)
         console.log(`   2. Query the index : codeindex query "how does auth work?"`)
       } else {
-        console.log(`   1. Set your API key: chạy 'codeindex setup', tạo file .env, hoặc 'export ${envVar}=<your-key>'`)
+        console.log(`   1. Chạy 'codeindex setup' để lưu cấu hình toàn cục vào ~/.codeindex/.env`)
         console.log(`   2. Build the index : codeindex index .`)
         console.log(`   3. Query the index : codeindex query "how does auth work?"`)
       }

@@ -5,7 +5,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { HttpServer } from "../src/server/HttpServer.js"
-import { loadConfig, resolveApiKey } from "../src/config.js"
+import { inspectConfig, loadConfig, resolveApiKey } from "../src/config.js"
 import * as fs from "fs/promises"
 import * as path from "path"
 import * as os from "os"
@@ -27,12 +27,22 @@ const mockLlm: LLMClient = {
 
 describe("loadConfig", () => {
   let tmpDir: string
+  let globalDir: string
+  const originalGlobalDir = process.env["CODEINDEX_GLOBAL_DIR"]
 
   beforeAll(async () => {
     tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "config-test-"))
+    globalDir = path.join(tmpDir, ".global")
+    await fs.mkdir(globalDir, { recursive: true })
+    process.env["CODEINDEX_GLOBAL_DIR"] = globalDir
   })
 
   afterAll(async () => {
+    if (originalGlobalDir === undefined) {
+      delete process.env["CODEINDEX_GLOBAL_DIR"]
+    } else {
+      process.env["CODEINDEX_GLOBAL_DIR"] = originalGlobalDir
+    }
     await fs.rm(tmpDir, { recursive: true, force: true })
   })
 
@@ -43,14 +53,14 @@ describe("loadConfig", () => {
     expect(config.verbose).toBe(false)
   })
 
-  it("should load from .codeindex.json", async () => {
+  it("should use only local project settings from .codeindex.json", async () => {
     await fs.writeFile(
       path.join(tmpDir, ".codeindex.json"),
       JSON.stringify({ provider: "anthropic", model: "claude-opus-4-5", indexDir: ".myindex" })
     )
     const config = loadConfig(tmpDir)
-    expect(config.provider).toBe("anthropic")
-    expect(config.model).toBe("claude-opus-4-5")
+    expect(config.provider).toBe("openai")
+    expect(config.model).toBe("gpt-4o")
     expect(config.indexDir).toBe(".myindex")
 
     await fs.unlink(path.join(tmpDir, ".codeindex.json"))
@@ -65,6 +75,109 @@ describe("loadConfig", () => {
     expect(config.model).toBe("gpt-4o-mini")
     expect(config.verbose).toBe(true)
 
+    await fs.unlink(path.join(tmpDir, ".codeindex.json"))
+  })
+
+  it("should read provider and API key from global .env", async () => {
+    await fs.writeFile(
+      path.join(globalDir, ".env"),
+      "CODEINDEX_PROVIDER=nvidia\nCODEINDEX_API_KEY=test-global-key\nCODEINDEX_MODEL=minimaxai/minimax-m3\n"
+    )
+
+    const config = loadConfig(tmpDir)
+    expect(config.provider).toBe("nvidia")
+    expect(config.model).toBe("minimaxai/minimax-m3")
+    expect(resolveApiKey(config)).toBe("test-global-key")
+
+    await fs.unlink(path.join(globalDir, ".env"))
+  })
+
+  it("should prefer global .env over legacy global config runtime values", async () => {
+    await fs.writeFile(
+      path.join(globalDir, "config.json"),
+      JSON.stringify({
+        provider: "openai",
+        apiKey: "legacy-key",
+        model: "legacy-model",
+        baseURL: "https://legacy.example/v1",
+      })
+    )
+    await fs.writeFile(
+      path.join(globalDir, ".env"),
+      "CODEINDEX_PROVIDER=nvidia\nCODEINDEX_API_KEY=test-global-key-env-priority\nCODEINDEX_MODEL=minimaxai/minimax-m3\nCODEINDEX_BASE_URL=https://integrate.api.nvidia.com/v1\n"
+    )
+
+    const config = loadConfig(tmpDir)
+    expect(config.provider).toBe("nvidia")
+    expect(config.model).toBe("minimaxai/minimax-m3")
+    expect(config.baseURL).toBe("https://integrate.api.nvidia.com/v1")
+    expect(resolveApiKey(config)).toBe("test-global-key-env-priority")
+
+    await fs.unlink(path.join(globalDir, ".env"))
+    await fs.unlink(path.join(globalDir, "config.json"))
+  })
+
+  it("should migrate legacy global config runtime values into global .env", async () => {
+    await fs.writeFile(
+      path.join(globalDir, "config.json"),
+      JSON.stringify({
+        provider: "nvidia",
+        apiKey: "legacy-migrate-key",
+        model: "minimaxai/minimax-m3",
+        baseURL: "https://integrate.api.nvidia.com/v1",
+      })
+    )
+
+    const config = loadConfig(tmpDir)
+    expect(config.provider).toBe("nvidia")
+    expect(resolveApiKey(config)).toBe("legacy-migrate-key")
+
+    const migratedEnv = await fs.readFile(path.join(globalDir, ".env"), "utf-8")
+    expect(migratedEnv).toContain("CODEINDEX_PROVIDER=nvidia")
+    expect(migratedEnv).toContain("CODEINDEX_API_KEY=legacy-migrate-key")
+
+    await fs.unlink(path.join(globalDir, ".env"))
+    await fs.unlink(path.join(globalDir, "config.json"))
+  })
+
+  it("should keep global runtime config even if project .codeindex.json contains provider/model", async () => {
+    await fs.writeFile(
+      path.join(globalDir, ".env"),
+      "CODEINDEX_PROVIDER=nvidia\nCODEINDEX_API_KEY=test-global-key-2\nCODEINDEX_MODEL=minimaxai/minimax-m3\n"
+    )
+    await fs.writeFile(
+      path.join(tmpDir, ".codeindex.json"),
+      JSON.stringify({ provider: "openai", model: "codeindex", indexDir: ".myindex-2" })
+    )
+
+    const config = loadConfig(tmpDir)
+    expect(config.provider).toBe("nvidia")
+    expect(config.model).toBe("minimaxai/minimax-m3")
+    expect(config.indexDir).toBe(".myindex-2")
+    expect(resolveApiKey(config)).toBe("test-global-key-2")
+
+    await fs.unlink(path.join(globalDir, ".env"))
+    await fs.unlink(path.join(tmpDir, ".codeindex.json"))
+  })
+
+  it("should explain config sources for global env and project config", async () => {
+    await fs.writeFile(
+      path.join(globalDir, ".env"),
+      "CODEINDEX_PROVIDER=nvidia\nCODEINDEX_API_KEY=test-global-key-3\nCODEINDEX_MODEL=minimaxai/minimax-m3\n"
+    )
+    await fs.writeFile(
+      path.join(tmpDir, ".codeindex.json"),
+      JSON.stringify({ indexDir: ".doctor-index", model: "ignored-model" })
+    )
+
+    const debug = inspectConfig(tmpDir)
+    expect(debug.effective.provider).toBe("nvidia")
+    expect(debug.effective.indexDir).toBe(".doctor-index")
+    expect(debug.fields.provider?.source).toBe("global-env")
+    expect(debug.fields.apiKey?.source).toBe("global-env")
+    expect(debug.fields.indexDir?.source).toBe("project-config")
+
+    await fs.unlink(path.join(globalDir, ".env"))
     await fs.unlink(path.join(tmpDir, ".codeindex.json"))
   })
 

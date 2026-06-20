@@ -1,6 +1,6 @@
 import type { Command } from "commander"
 import * as readline from "readline"
-import { saveGlobalConfig } from "../config.js"
+import { saveGlobalConfig, saveGlobalEnv } from "../config.js"
 
 function ask(rl: readline.Interface, question: string): Promise<string> {
   return new Promise((resolve) => rl.question(question, resolve))
@@ -69,9 +69,11 @@ export function registerSetupCommand(program: Command): void {
       }
 
       saveGlobalConfig(config)
+      saveGlobalEnv(config)
       
       rl.close()
       console.log(`\n✅ Đã lưu cấu hình toàn cục vào ~/.codeindex/config.json`)
-      console.log(`\n✨ Xong! Bây giờ bạn có thể dùng 'codeindex init' hoặc 'codeindex index' ở bất kỳ đâu.`)
+      console.log(`✅ Đã lưu runtime env toàn cục vào ~/.codeindex/.env`)
+      console.log(`\n✨ Xong! Chạy setup một lần, các lần sau 'codeindex index' sẽ dùng cấu hình toàn cục này.`)
     })
 }
