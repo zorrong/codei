@@ -65,7 +65,7 @@ export class JavaAstParser {
   private extractClasses(content: string, lines: string[]): RawSymbol[] {
     const classes: RawSymbol[] = []
     for (const m of this.findAll(content, CLASS_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -89,7 +89,7 @@ export class JavaAstParser {
   private extractInterfaces(content: string, lines: string[]): RawSymbol[] {
     const interfaces: RawSymbol[] = []
     for (const m of this.findAll(content, INTERFACE_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -113,7 +113,7 @@ export class JavaAstParser {
   private extractEnums(content: string, lines: string[]): RawSymbol[] {
     const enums: RawSymbol[] = []
     for (const m of this.findAll(content, ENUM_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -137,7 +137,7 @@ export class JavaAstParser {
   private extractRecords(content: string, lines: string[]): RawSymbol[] {
     const records: RawSymbol[] = []
     for (const m of this.findAll(content, RECORD_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -161,7 +161,7 @@ export class JavaAstParser {
   private extractAnnotations(content: string, lines: string[]): RawSymbol[] {
     const annotations: RawSymbol[] = []
     for (const m of this.findAll(content, ANNOTATION_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -184,7 +184,7 @@ export class JavaAstParser {
   private extractMethods(content: string, lines: string[]): RawSymbol[] {
     const methods: RawSymbol[] = []
     for (const m of this.findAll(content, METHOD_RE)) {
-      const name = m[1]
+      const name = m[3]
       if (!name || JAVA_KEYWORDS.has(name)) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -209,7 +209,7 @@ export class JavaAstParser {
   private extractFields(content: string, lines: string[]): RawSymbol[] {
     const fields: RawSymbol[] = []
     for (const m of this.findAll(content, FIELD_RE)) {
-      const name = m[1]
+      const name = m[3]
       if (!name || JAVA_KEYWORDS.has(name)) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.lineNum((m.index ?? 0) + m[0].length, lines)
@@ -234,7 +234,7 @@ export class JavaAstParser {
   private extractConstructors(content: string, lines: string[]): RawSymbol[] {
     const ctors: RawSymbol[] = []
     for (const m of this.findAll(content, CTOR_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)

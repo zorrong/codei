@@ -214,7 +214,8 @@ export class PythonAstParser {
   private findAll(content: string, re: RegExp): RegExpMatchArray[] {
     const results: RegExpMatchArray[] = []
     let match: RegExpExecArray | null
-    const r = new RegExp(re.source, "g")
+    const flags = re.flags.includes("g") ? re.flags : `${re.flags}g`
+    const r = new RegExp(re.source, flags)
     while ((match = r.exec(content)) !== null) {
       results.push(match)
       if (match.index === r.lastIndex) r.lastIndex++

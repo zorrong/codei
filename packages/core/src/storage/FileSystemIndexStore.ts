@@ -145,6 +145,7 @@ export class FileSystemIndexStore implements IndexStore {
       const output = execSync("git ls-files -s", {
         cwd: projectRoot,
         encoding: "utf-8",
+        stdio: ["ignore", "pipe", "pipe"],
       })
       for (const line of output.split("\n")) {
         const parts = line.trim().split(/\s+/)
@@ -167,6 +168,7 @@ export class FileSystemIndexStore implements IndexStore {
       const hash = execSync(`git hash-object "${relPath}"`, {
         cwd: projectRoot,
         encoding: "utf-8",
+        stdio: ["ignore", "pipe", "pipe"],
       }).trim()
       return hash
     } catch {

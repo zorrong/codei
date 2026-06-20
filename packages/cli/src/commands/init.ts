@@ -45,11 +45,11 @@ export function registerInitCommand(program: Command): void {
 
         console.log("\n🔧 codeindex project init\n")
         console.log(`⚠️  Chưa tìm thấy cấu hình toàn cục. Bạn nên chạy 'codeindex setup' trước.`)
-        console.log(`   Hoặc có thể set biến môi trường: export OPENAI_API_KEY=...\n`)
+        console.log(`   Hoặc tạo file .env trong project root, ví dụ: NVIDIA_API_KEY=... \n`)
 
         const providerInput = await ask(
           rl,
-          `LLM provider [openai/anthropic/google/custom/ollama] (mặc định: ${provider}): `
+          `LLM provider [openai/anthropic/google/nvidia/custom/ollama] (mặc định: ${provider}): `
         )
         provider = (providerInput.trim() || provider) as any
 
@@ -57,6 +57,7 @@ export function registerInitCommand(program: Command): void {
           openai: "gpt-4o",
           anthropic: "claude-sonnet-4-5",
           google: "gemini-1.5-flash",
+          nvidia: "minimaxai/minimax-m3",
           custom: "gpt-4o-compatible",
           ollama: "llama3.2",
         }
@@ -99,6 +100,7 @@ export function registerInitCommand(program: Command): void {
         openai: "OPENAI_API_KEY",
         anthropic: "ANTHROPIC_API_KEY",
         google: "GOOGLE_API_KEY",
+        nvidia: "NVIDIA_API_KEY",
         custom: "CUSTOM_API_KEY",
         ollama: "(không cần key)",
       }
@@ -108,7 +110,7 @@ export function registerInitCommand(program: Command): void {
         console.log(`   1. Build the index : codeindex index .`)
         console.log(`   2. Query the index : codeindex query "how does auth work?"`)
       } else {
-        console.log(`   1. Set your API key: chạy 'codeindex setup' hoặc 'export ${envVar}=<your-key>'`)
+        console.log(`   1. Set your API key: chạy 'codeindex setup', tạo file .env, hoặc 'export ${envVar}=<your-key>'`)
         console.log(`   2. Build the index : codeindex index .`)
         console.log(`   3. Query the index : codeindex query "how does auth work?"`)
       }

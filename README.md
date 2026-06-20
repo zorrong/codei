@@ -70,8 +70,9 @@ After:  Paste 3 files (2KB)   → Same answer
 # 1. Install
 pnpm install -g @codeindex/cli
 
-# 2. Setup (one-time)
-codeindex setup
+# 2. Configure your project's .env
+cp .env.example .env
+# then edit .env with your API key
 
 # 3. Index your project
 cd your-project
@@ -81,7 +82,14 @@ codeindex index .
 codeindex query "How does the auth module work?"
 ```
 
-**That's it.** No cloud signup, no API costs, no vector database to maintain.
+For NVIDIA, a minimal `.env` is enough:
+
+```env
+NVIDIA_API_KEY=nvapi-...
+CODEINDEX_BASE_URL=https://integrate.api.nvidia.com/v1
+```
+
+**That's it.** Project-first config, no need to run global setup for every project.
 
 ***
 

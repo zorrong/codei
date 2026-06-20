@@ -13,8 +13,6 @@ interface IgnoreInstance {
   filter(pathnames: readonly string[]): string[]
 }
 
-type IgnoreConstructor = () => IgnoreInstance
-
 const require = createRequire(import.meta.url)
 
 export interface ScanResult {
@@ -113,6 +111,7 @@ export class FileScanner {
       const output = execSync(`git diff --name-only ${since} HEAD`, {
         cwd: this.options.projectRoot,
         encoding: "utf-8",
+        stdio: ["ignore", "pipe", "pipe"],
       })
 
       return output
@@ -135,6 +134,7 @@ export class FileScanner {
       return execSync(`git hash-object "${relPath}"`, {
         cwd: this.options.projectRoot,
         encoding: "utf-8",
+        stdio: ["ignore", "pipe", "pipe"],
       }).trim()
     } catch {
       try {

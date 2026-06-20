@@ -21,7 +21,7 @@ export function registerSetupCommand(program: Command): void {
       // 1. Provider
       const providerInput = await ask(
         rl,
-        "LLM provider [openai/anthropic/google/custom/ollama] (mặc định: openai): "
+        "LLM provider [openai/anthropic/google/nvidia/custom/ollama] (mặc định: openai): "
       )
       const provider = (providerInput.trim() || "openai") as any
 
@@ -40,6 +40,7 @@ export function registerSetupCommand(program: Command): void {
         openai: "gpt-4o",
         anthropic: "claude-sonnet-4-5",
         google: "gemini-1.5-flash",
+        nvidia: "minimaxai/minimax-m3",
         custom: "gpt-4o-compatible",
         ollama: "llama3.2",
       }
@@ -50,15 +51,19 @@ export function registerSetupCommand(program: Command): void {
       }
 
       // 4. Base URL (Tuỳ chọn - cho OpenRouter, Proxy, v.v.)
-      if (provider === "openai" || provider === "custom" || provider === "ollama") {
-        const defaultURL = provider === "ollama" ? "http://localhost:11434/v1" : ""
+      if (provider === "openai" || provider === "nvidia" || provider === "custom" || provider === "ollama") {
+        const defaultURL = provider === "ollama"
+          ? "http://localhost:11434/v1"
+          : provider === "nvidia"
+            ? "https://integrate.api.nvidia.com/v1"
+            : ""
         const baseURLInput = await ask(
           rl, 
           `Nhập Base URL nếu dùng Proxy/OpenRouter (bỏ qua nếu dùng mặc định): `
         )
         if (baseURLInput.trim()) {
           config.baseURL = baseURLInput.trim()
-        } else if (provider === "ollama" && !baseURLInput.trim()) {
+        } else if ((provider === "ollama" || provider === "nvidia") && !baseURLInput.trim()) {
           config.baseURL = defaultURL
         }
       }

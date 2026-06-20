@@ -69,7 +69,7 @@ export class PhpAstParser {
   private extractClasses(content: string, lines: string[]): RawSymbol[] {
     const classes: RawSymbol[] = []
     for (const m of this.findAll(content, CLASS_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -185,7 +185,7 @@ export class PhpAstParser {
   private extractMethods(content: string, lines: string[]): RawSymbol[] {
     const methods: RawSymbol[] = []
     for (const m of this.findAll(content, METHOD_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name || name === "__construct" || name === "__destruct" || name === "__call") {
         if (name === "__construct" || name === "__destruct") {
           const startLine = this.lineNum(m.index ?? 0, lines)
@@ -225,7 +225,7 @@ export class PhpAstParser {
   private extractProperties(content: string, lines: string[]): RawSymbol[] {
     const props: RawSymbol[] = []
     for (const m of this.findAll(content, PROP_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name || name.startsWith("$")) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.lineNum((m.index ?? 0) + m[0].length, lines)

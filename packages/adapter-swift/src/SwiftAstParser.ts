@@ -70,7 +70,7 @@ export class SwiftAstParser {
   private extractClasses(content: string, lines: string[]): RawSymbol[] {
     const classes: RawSymbol[] = []
     for (const m of this.findAll(content, CLASS_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -94,7 +94,7 @@ export class SwiftAstParser {
   private extractStructs(content: string, lines: string[]): RawSymbol[] {
     const structs: RawSymbol[] = []
     for (const m of this.findAll(content, STRUCT_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -118,7 +118,7 @@ export class SwiftAstParser {
   private extractEnums(content: string, lines: string[]): RawSymbol[] {
     const enums: RawSymbol[] = []
     for (const m of this.findAll(content, ENUM_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -142,7 +142,7 @@ export class SwiftAstParser {
   private extractProtocols(content: string, lines: string[]): RawSymbol[] {
     const protocols: RawSymbol[] = []
     for (const m of this.findAll(content, PROTOCOL_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -187,7 +187,7 @@ export class SwiftAstParser {
   private extractFunctions(content: string, lines: string[]): RawSymbol[] {
     const functions: RawSymbol[] = []
     for (const m of this.findAll(content, FUNC_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name || name === "_" || SWIFT_KEYWORDS.has(name)) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -211,7 +211,7 @@ export class SwiftAstParser {
   private extractMethods(content: string, lines: string[]): RawSymbol[] {
     const methods: RawSymbol[] = []
     for (const m of this.findAll(content, METHOD_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name || name === "_" || SWIFT_KEYWORDS.has(name)) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -275,7 +275,7 @@ export class SwiftAstParser {
   private extractProperties(content: string, lines: string[]): RawSymbol[] {
     const props: RawSymbol[] = []
     for (const m of this.findAll(content, PROP_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name || SWIFT_KEYWORDS.has(name)) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.lineNum((m.index ?? 0) + m[0].length, lines)
@@ -297,7 +297,7 @@ export class SwiftAstParser {
   private extractTypealiases(content: string, lines: string[]): RawSymbol[] {
     const aliases: RawSymbol[] = []
     for (const m of this.findAll(content, TYPEALIAS_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.lineNum((m.index ?? 0) + m[0].length, lines)

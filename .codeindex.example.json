@@ -1,6 +1,4 @@
 {
-  "provider": "openai",
-  "model": "gpt-4o",
   "indexDir": ".index",
   "projectName": "my-project"
 }

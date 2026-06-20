@@ -7,7 +7,6 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { HttpServer } from "../src/server/HttpServer.js"
 import { loadConfig, resolveApiKey } from "../src/config.js"
 import * as fs from "fs/promises"
-import * as fsSync from "fs"
 import * as path from "path"
 import * as os from "os"
 import type { LLMClient, LLMResponse } from "@codeindex/core"
@@ -75,6 +74,35 @@ describe("loadConfig", () => {
     const key = resolveApiKey(config)
     expect(key).toBe("test-key-from-env")
     delete process.env["OPENAI_API_KEY"]
+  })
+
+  it("should read provider and API key from project .env", async () => {
+    await fs.writeFile(
+      path.join(tmpDir, ".env"),
+      "CODEINDEX_PROVIDER=nvidia\nNVIDIA_API_KEY=test-nvidia-key\nCODEINDEX_MODEL=minimaxai/minimax-m3\n"
+    )
+
+    const config = loadConfig(tmpDir)
+    expect(config.provider).toBe("nvidia")
+    expect(config.model).toBe("minimaxai/minimax-m3")
+    expect(resolveApiKey(config)).toBe("test-nvidia-key")
+
+    await fs.unlink(path.join(tmpDir, ".env"))
+  })
+
+  it("should infer nvidia provider from project .env without CODEINDEX_PROVIDER", async () => {
+    await fs.writeFile(
+      path.join(tmpDir, ".env"),
+      "NVIDIA_API_KEY=test-nvidia-key-2\nCODEINDEX_BASE_URL=https://integrate.api.nvidia.com/v1\n"
+    )
+
+    const config = loadConfig(tmpDir)
+    expect(config.provider).toBe("nvidia")
+    expect(config.model).toBe("minimaxai/minimax-m3")
+    expect(config.baseURL).toBe("https://integrate.api.nvidia.com/v1")
+    expect(resolveApiKey(config)).toBe("test-nvidia-key-2")
+
+    await fs.unlink(path.join(tmpDir, ".env"))
   })
 
   it("should return 'ollama' as key for ollama provider without env var", () => {

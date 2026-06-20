@@ -153,12 +153,10 @@ Server health check.
 
 ### `.codeindex.json`
 
-Project-level configuration.
+Project-level configuration. Recommended: keep this file minimal and put API/provider settings in the project's `.env`.
 
 ```json
 {
-  "provider": "openai",
-  "model": "gpt-4o",
   "indexDir": ".index",
   "projectName": "my-project",
   "serverApiKey": "optional-api-key",
@@ -168,16 +166,30 @@ Project-level configuration.
 }
 ```
 
+### `.env`
+
+Recommended per-project API configuration.
+
+```env
+NVIDIA_API_KEY=nvapi-...
+CODEINDEX_BASE_URL=https://integrate.api.nvidia.com/v1
+# Optional:
+# CODEINDEX_PROVIDER=nvidia
+# CODEINDEX_MODEL=minimaxai/minimax-m3
+```
+
+If `NVIDIA_API_KEY` or the NVIDIA base URL is present, `codeindex` can infer the NVIDIA provider automatically.
+
 ### `~/.codeindex/config.json`
 
-Global configuration (created by `codeindex setup`).
+Optional global configuration (created by `codeindex setup`).
 
 ```json
 {
-  "provider": "openai",
-  "model": "gpt-4o",
-  "apiKey": "sk-...",
-  "baseURL": "https://api.openai.com/v1"
+  "provider": "nvidia",
+  "model": "minimaxai/minimax-m3",
+  "apiKey": "nvapi-...",
+  "baseURL": "https://integrate.api.nvidia.com/v1"
 }
 ```
 
@@ -190,8 +202,10 @@ Global configuration (created by `codeindex setup`).
 | `OPENAI_API_KEY` | OpenAI API key |
 | `ANTHROPIC_API_KEY` | Anthropic API key |
 | `GOOGLE_API_KEY` | Google AI API key |
+| `NVIDIA_API_KEY` | NVIDIA API key |
 | `CODEINDEX_PROVIDER` | Override default provider |
 | `CODEINDEX_MODEL` | Override default model |
+| `CODEINDEX_BASE_URL` | Override API base URL |
 | `CODEINDEX_API_KEY` | Override API key |
 
 ---
@@ -246,7 +260,7 @@ const result = await traversal.traverse("How does auth work?")
 
 ### `codeindex setup`
 
-Interactive global configuration.
+Interactive optional global configuration.
 
 ```bash
 codeindex setup

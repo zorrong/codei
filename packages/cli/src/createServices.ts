@@ -10,7 +10,7 @@ import { OpenAILLMClient, AnthropicLLMClient, GoogleLLMClient } from "./llm/LLMC
 import { type CodeIndexConfig, resolveApiKey } from "./config.js"
 
 // Tất cả adapters — mỗi adapter đăng ký extensions riêng
-async function loadAllAdapters(): Promise<LanguageAdapter[]> {
+async function loadAllAdapters(verbose = false): Promise<LanguageAdapter[]> {
   const adapters: LanguageAdapter[] = [
     new TypeScriptAdapter(), // .ts, .tsx
   ]
@@ -30,8 +30,13 @@ async function loadAllAdapters(): Promise<LanguageAdapter[]> {
   for (const { name, load } of optionalAdapters) {
     try {
       adapters.push(await load())
-    } catch {
-      // Adapter chưa được cài hoặc chưa build — bỏ qua
+    } catch (error) {
+      // Adapter optional có thể chưa được cài hoặc chưa build.
+      // Ở chế độ verbose, log rõ để user biết language support nào đang thiếu.
+      if (verbose) {
+        const message = error instanceof Error ? error.message : String(error)
+        console.warn(`[codeindex] Optional adapter "${name}" not loaded: ${message}`)
+      }
     }
   }
 
@@ -47,6 +52,13 @@ export function createLLMClient(config: CodeIndexConfig): LLMClient {
 
     case "google":
       return new GoogleLLMClient({ apiKey, model: config.model })
+
+    case "nvidia":
+      return new OpenAILLMClient({
+        apiKey,
+        model: config.model,
+        baseURL: config.baseURL ?? "https://integrate.api.nvidia.com/v1",
+      })
 
     case "ollama":
       return new OpenAILLMClient({
@@ -72,7 +84,7 @@ export async function createIndexManager(
   config: CodeIndexConfig,
   llmClient: LLMClient
 ): Promise<IndexManager> {
-  const adapters = await loadAllAdapters()
+  const adapters = await loadAllAdapters(config.verbose)
   
   return new IndexManager({
     projectRoot,

@@ -69,7 +69,7 @@ export class CSharpAstParser {
   private extractClasses(content: string, lines: string[]): RawSymbol[] {
     const classes: RawSymbol[] = []
     for (const m of this.findAll(content, CLASS_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -93,7 +93,7 @@ export class CSharpAstParser {
   private extractStructs(content: string, lines: string[]): RawSymbol[] {
     const structs: RawSymbol[] = []
     for (const m of this.findAll(content, STRUCT_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -117,7 +117,7 @@ export class CSharpAstParser {
   private extractInterfaces(content: string, lines: string[]): RawSymbol[] {
     const interfaces: RawSymbol[] = []
     for (const m of this.findAll(content, INTERFACE_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -141,7 +141,7 @@ export class CSharpAstParser {
   private extractEnums(content: string, lines: string[]): RawSymbol[] {
     const enums: RawSymbol[] = []
     for (const m of this.findAll(content, ENUM_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -165,7 +165,7 @@ export class CSharpAstParser {
   private extractDelegates(content: string, lines: string[]): RawSymbol[] {
     const delegates: RawSymbol[] = []
     for (const m of this.findAll(content, DELEGATE_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.lineNum((m.index ?? 0) + m[0].length, lines)
@@ -189,7 +189,7 @@ export class CSharpAstParser {
   private extractRecords(content: string, lines: string[]): RawSymbol[] {
     const records: RawSymbol[] = []
     for (const m of this.findAll(content, RECORD_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -213,19 +213,18 @@ export class CSharpAstParser {
   private extractMethods(content: string, lines: string[]): RawSymbol[] {
     const methods: RawSymbol[] = []
     for (const m of this.findAll(content, METHOD_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name || CSHARP_KEYWORDS.has(name)) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
       const fullSource = lines.slice(startLine - 1, endLine).join("\n")
       const docComment = this.extractDoc(fullSource)
       const isExported = Boolean(m[0].match(/\bpublic\b/))
-      const params = m[2] ?? ""
-      const retType = m[3] ?? "void"
+      const params = m[3] ?? ""
       methods.push({
         name,
         kind: "method",
-        signature: `${retType} ${name}(${params})`,
+        signature: `${name}(${params})`,
         startLine,
         endLine,
         fullSource,
@@ -239,7 +238,7 @@ export class CSharpAstParser {
   private extractProperties(content: string, lines: string[]): RawSymbol[] {
     const props: RawSymbol[] = []
     for (const m of this.findAll(content, PROPERTY_RE)) {
-      const name = m[1]
+      const name = m[3]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
@@ -264,7 +263,7 @@ export class CSharpAstParser {
   private extractConstructors(content: string, lines: string[]): RawSymbol[] {
     const ctors: RawSymbol[] = []
     for (const m of this.findAll(content, CTOR_RE)) {
-      const name = m[1]
+      const name = m[2]
       if (!name) continue
       const startLine = this.lineNum(m.index ?? 0, lines)
       const endLine = this.braceEnd(startLine, lines)
