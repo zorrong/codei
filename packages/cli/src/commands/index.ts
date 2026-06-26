@@ -4,8 +4,8 @@
 
 import type { Command } from "commander"
 import * as path from "path"
-import { type CodeIndexConfig, loadConfig, resolveApiKey } from "../config.js"
-import { createLLMClient, createIndexManager } from "../createServices.js"
+import { type CodeIndexConfig, loadConfig } from "../config.js"
+import { createIndexManager, createLLMClient, createNoopLLMClient } from "../createServices.js"
 
 export function registerIndexCommand(program: Command): void {
   program
@@ -30,22 +30,14 @@ export function registerIndexCommand(program: Command): void {
       const config = loadConfig(projectRoot, overrides)
 
 
-      // Validate API key sớm
-      let apiKey: string
-      try {
-        apiKey = resolveApiKey(config)
-      } catch (err) {
-        console.error(`Error: ${(err as Error).message}`)
-        process.exit(1)
-      }
-
       console.log(`📁 Indexing: ${projectRoot}`)
       console.log(`🤖 Provider: ${config.provider} / ${config.model}`)
       console.log(`📂 Index dir: ${config.indexDir}`)
+      console.log(`🧾 Summary mode: ${config.summaryMode ?? "auto"}`)
       console.log("")
 
       try {
-        const llm = createLLMClient({ ...config, apiKey })
+        const llm = (config.summaryMode ?? "auto") === "heuristic" ? createNoopLLMClient() : createLLMClient(config)
         const manager = await createIndexManager(projectRoot, config, llm)
         const supportedExts = manager.getSupportedExtensionsList()
         console.log(`🔌 Adapters: ${supportedExts.join(", ")}`)

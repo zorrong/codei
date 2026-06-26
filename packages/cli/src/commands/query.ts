@@ -6,7 +6,7 @@ import type { Command } from "commander"
 import * as path from "path"
 import { loadConfig } from "../config.js"
 import { createLLMClient, createIndexManager } from "../createServices.js"
-import { FileSystemIndexStore, Retriever } from "@codeindex/core"
+import { FileSystemIndexStore, Retriever, TraversalCache } from "@codeindex/core"
 
 export function registerQueryCommand(program: Command): void {
   program
@@ -38,8 +38,12 @@ export function registerQueryCommand(program: Command): void {
 
       try {
         const llm = createLLMClient(config)
+        const cache = new TraversalCache({
+          persistencePath: path.join(projectRoot, config.indexDir, "traversal-cache.json"),
+        })
         const retriever = new Retriever({
           llmClient: llm,
+          cache,
           config: {
             maxOutputTokens: parseInt(options["maxTokens"] as string ?? "4000"),
             expandDeps: options["deps"] !== false,

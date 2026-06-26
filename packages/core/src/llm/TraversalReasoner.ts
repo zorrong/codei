@@ -42,6 +42,11 @@ export class TraversalReasoner {
       }
     }
 
+    const heuristic = this.selectByHeuristic(query, candidates, maxSelect)
+    if (heuristic) {
+      return { selectedIds: heuristic, reasoning: "Heuristic selection" }
+    }
+
     const candidateList = candidates
       .map((c) => `[${c.nodeId}] ${c.title}: ${c.summary}`)
       .join("\n")
@@ -104,5 +109,46 @@ Respond with ONLY a JSON object, no markdown:
         reasoning: "Failed to parse LLM response, using first candidate",
       }
     }
+  }
+
+  private selectByHeuristic(query: string, candidates: NodeCandidate[], maxSelect: number): string[] | null {
+    const q = this.normalize(query)
+    const qTokens = this.tokenize(q).filter((t) => t.length >= 2)
+    if (qTokens.length === 0) return null
+
+    const scored = candidates
+      .map((c) => {
+        const hay = this.normalize(`${c.title} ${c.summary} ${c.nodeId}`)
+        let hits = 0
+        for (const t of qTokens) {
+          if (hay.includes(t)) hits++
+        }
+        const score = hits / Math.max(3, qTokens.length)
+        return { id: c.nodeId, score }
+      })
+      .sort((a, b) => b.score - a.score)
+
+    const best = scored[0]
+    const second = scored[1]
+    if (!best || best.score <= 0) return null
+
+    const gap = best.score - (second?.score ?? 0)
+    if (best.score < 0.45 && gap < 0.25) return null
+
+    const threshold = Math.max(0.2, best.score * 0.6)
+    const selected = scored
+      .filter((s) => s.score >= threshold)
+      .slice(0, maxSelect)
+      .map((s) => s.id)
+
+    return selected.length > 0 ? selected : null
+  }
+
+  private normalize(text: string): string {
+    return text.toLowerCase().replace(/[^\w\s/:\.-]+/g, " ").replace(/\s+/g, " ").trim()
+  }
+
+  private tokenize(text: string): string[] {
+    return text.split(/\s+/).filter(Boolean)
   }
 }

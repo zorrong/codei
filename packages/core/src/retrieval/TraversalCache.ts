@@ -4,10 +4,13 @@
  */
 
 import type { TraversalResult } from "../tree/TreeTraversal.js"
+import * as fsSync from "fs"
+import * as path from "path"
 
 interface CacheEntry {
   result: TraversalResult
   queryHash: string
+  originalQuery: string
   timestamp: number
   hitCount: number
 }
@@ -16,13 +19,42 @@ export class TraversalCache {
   private readonly cache: Map<string, CacheEntry> = new Map()
   private readonly maxEntries: number
   private readonly ttlMs: number
+  private readonly persistencePath: string | undefined
+  private readonly persistenceDebounceMs: number
+  private flushTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor(options: {
     maxEntries?: number
     ttlMs?: number
+    persistencePath?: string
+    persistenceDebounceMs?: number
   } = {}) {
     this.maxEntries = options.maxEntries ?? 1000
     this.ttlMs = options.ttlMs ?? 60 * 60 * 1000
+    this.persistencePath = options.persistencePath
+    this.persistenceDebounceMs = options.persistenceDebounceMs ?? 400
+
+    if (this.persistencePath && fsSync.existsSync(this.persistencePath)) {
+      try {
+        const raw = fsSync.readFileSync(this.persistencePath, "utf-8")
+        const data = JSON.parse(raw) as Array<{
+          originalQuery: string
+          result: TraversalResult
+          timestamp: number
+          hitCount: number
+        }>
+        for (const entry of data) {
+          const key = this.hashQuery(entry.originalQuery)
+          this.cache.set(key, {
+            result: entry.result,
+            queryHash: key,
+            originalQuery: entry.originalQuery,
+            timestamp: entry.timestamp,
+            hitCount: entry.hitCount,
+          })
+        }
+      } catch {}
+    }
   }
 
   get(query: string): TraversalResult | null {
@@ -49,9 +81,12 @@ export class TraversalCache {
     this.cache.set(key, {
       result,
       queryHash: key,
+      originalQuery: query,
       timestamp: Date.now(),
       hitCount: 0,
     })
+
+    this.scheduleFlush()
   }
 
   findSimilar(query: string, similarityThreshold = 0.8): TraversalResult | null {
@@ -64,7 +99,7 @@ export class TraversalCache {
     for (const entry of this.cache.values()) {
       if (Date.now() - entry.timestamp > this.ttlMs) continue
 
-      const entryWords = this.tokenize(entry.queryHash)
+      const entryWords = this.tokenize(entry.originalQuery)
       const entrySet = new Set(entryWords)
 
       const intersection = [...querySet].filter((w) => entrySet.has(w)).length
@@ -88,6 +123,7 @@ export class TraversalCache {
   invalidate(pattern?: string): void {
     if (!pattern) {
       this.cache.clear()
+      this.scheduleFlush()
       return
     }
 
@@ -96,6 +132,7 @@ export class TraversalCache {
         this.cache.delete(key)
       }
     }
+    this.scheduleFlush()
   }
 
   stats(): {
@@ -143,6 +180,29 @@ export class TraversalCache {
     if (keyToDelete) {
       this.cache.delete(keyToDelete)
     }
+  }
+
+  private scheduleFlush(): void {
+    if (!this.persistencePath) return
+    if (this.flushTimer) clearTimeout(this.flushTimer)
+    this.flushTimer = setTimeout(() => {
+      this.flushTimer = null
+      this.flush()
+    }, this.persistenceDebounceMs)
+  }
+
+  private flush(): void {
+    if (!this.persistencePath) return
+    try {
+      const entries = Array.from(this.cache.values()).map((e) => ({
+        originalQuery: e.originalQuery,
+        result: e.result,
+        timestamp: e.timestamp,
+        hitCount: e.hitCount,
+      }))
+      fsSync.mkdirSync(path.dirname(this.persistencePath), { recursive: true })
+      fsSync.writeFileSync(this.persistencePath, JSON.stringify(entries, null, 2), "utf-8")
+    } catch {}
   }
 
   private hashQuery(query: string): string {

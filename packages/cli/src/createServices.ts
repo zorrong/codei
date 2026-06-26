@@ -78,6 +78,14 @@ export function createLLMClient(config: CodeIndexConfig): LLMClient {
   }
 }
 
+export function createNoopLLMClient(): LLMClient {
+  return {
+    complete: async () => {
+      throw new Error("LLM is disabled")
+    },
+  }
+}
+
 
 export async function createIndexManager(
   projectRoot: string,
@@ -93,5 +101,6 @@ export async function createIndexManager(
     indexDir: config.indexDir,
     verbose: config.verbose,
     ...(config.projectName !== undefined && { projectName: config.projectName }),
+    ...(config.summaryMode !== undefined && { summaryMode: config.summaryMode }),
   })
 }

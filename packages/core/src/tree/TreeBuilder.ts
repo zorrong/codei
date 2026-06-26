@@ -6,7 +6,7 @@
 import type { IndexTree, ProjectNode, ModuleNode, FileNode, SymbolNode, TreeIndex } from "../types/TreeNode.js"
 import type { ParsedFile, RawSymbol } from "../types/RawSymbol.js"
 import type { LLMClient } from "../types/LLMClient.js"
-import { SummaryGenerator } from "../llm/SummaryGenerator.js"
+import { SummaryGenerator, type SummaryCache, type SummaryMode } from "../llm/SummaryGenerator.js"
 import { FileSystemIndexStore } from "../storage/FileSystemIndexStore.js"
 import * as path from "path"
 
@@ -16,15 +16,25 @@ export interface TreeBuilderOptions {
   llmClient: LLMClient
   verbose?: boolean
   moduleDepth?: number
+  summaryMode?: SummaryMode
 }
 
 export class TreeBuilder {
   private readonly summaryGen: SummaryGenerator
   private readonly options: TreeBuilderOptions
+  private summaryCache: SummaryCache = {}
 
   constructor(options: TreeBuilderOptions) {
     this.options = options
-    this.summaryGen = new SummaryGenerator(options.llmClient)
+    this.summaryGen = new SummaryGenerator(options.llmClient, { mode: options.summaryMode ?? "heuristic" })
+  }
+
+  setSummaryCache(cache: SummaryCache): void {
+    this.summaryCache = cache
+  }
+
+  getSummaryCache(): SummaryCache {
+    return this.summaryCache
   }
 
   async build(files: ParsedFile[]): Promise<IndexTree> {
@@ -37,7 +47,10 @@ export class TreeBuilder {
 
     // Step 1: Generate file summaries
     log("[TreeBuilder] Generating file summaries...")
-    const fileSummaries = await this.summaryGen.generateFileSummaries(files, 5)
+    const fileSummaries = await this.summaryGen.generateFileSummaries(files, 5, {
+      cache: this.summaryCache,
+      getHash: (file) => FileSystemIndexStore.getFileGitHash(file.filePath, projectRoot),
+    })
 
     // Step 2: Build FileNodes + SymbolNodes
     const moduleMap = new Map<string, string[]>()
@@ -74,7 +87,7 @@ export class TreeBuilder {
         nodeId: fileNodeId,
         title: path.basename(file.relativePath),
         level: "file",
-        shortSummary: summary?.shortSummary ?? `${file.relativePath} — TypeScript module`,
+        shortSummary: summary?.shortSummary ?? `${file.relativePath} — ${file.language} file`,
         detailedSummary: summary?.detailedSummary,
         filePath: file.relativePath,
         gitHash,
@@ -165,13 +178,25 @@ export class TreeBuilder {
 
     // Step 4: Build ProjectNode
     const projectNodeId = "project:root"
+    const langCounts = new Map<string, number>()
+    for (const f of files) {
+      langCounts.set(f.language, (langCounts.get(f.language) ?? 0) + 1)
+    }
+    const primaryLanguage =
+      Array.from(langCounts.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "typescript"
+    const secondary = Array.from(langCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(1, 3)
+      .map(([k, v]) => `${k}:${v}`)
+      .join(", ")
+    const langSuffix = secondary ? ` (also ${secondary})` : ""
     const projectNode: ProjectNode = {
       nodeId: projectNodeId,
       title: projectName ?? path.basename(projectRoot),
       level: "project",
-      shortSummary: `TypeScript project with ${files.length} files across ${moduleMap.size} modules`,
+      shortSummary: `${primaryLanguage} project with ${files.length} files across ${moduleMap.size} modules${langSuffix}`,
       rootPath: projectRoot,
-      primaryLanguage: "typescript",
+      primaryLanguage,
       children: rootModuleIds,
     }
     nodes[projectNodeId] = projectNode
@@ -186,7 +211,10 @@ export class TreeBuilder {
 
   async updatePartial(existingTree: IndexTree, changedFiles: ParsedFile[]): Promise<IndexTree> {
     const nodes = { ...existingTree.nodes }
-    const fileSummaries = await this.summaryGen.generateFileSummaries(changedFiles, 5)
+    const fileSummaries = await this.summaryGen.generateFileSummaries(changedFiles, 5, {
+      cache: this.summaryCache,
+      getHash: (file) => FileSystemIndexStore.getFileGitHash(file.filePath, this.options.projectRoot),
+    })
     const affectedModuleIds = new Set<string>()
 
     for (const file of changedFiles) {

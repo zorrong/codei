@@ -6,6 +6,8 @@
 import type { LLMClient } from "../types/LLMClient.js"
 import type { ParsedFile, RawSymbol } from "../types/RawSymbol.js"
 
+export type SummaryMode = "llm" | "heuristic" | "auto"
+
 export interface FileSummaryResult {
   relativePath: string
   shortSummary: string
@@ -17,20 +19,61 @@ export interface ModuleSummaryResult {
   shortSummary: string
 }
 
+export interface SummaryCacheEntry {
+  gitHash: string
+  shortSummary: string
+  detailedSummary: string
+  updatedAt: number
+}
+
+export type SummaryCache = Record<string, SummaryCacheEntry>
+
 export class SummaryGenerator {
-  constructor(private readonly llm: LLMClient) {}
+  private mode: SummaryMode
+
+  constructor(
+    private readonly llm: LLMClient,
+    options: { mode?: SummaryMode } = {}
+  ) {
+    this.mode = options.mode ?? "auto"
+  }
+
+  setMode(mode: SummaryMode): void {
+    this.mode = mode
+  }
+
+  async generateFileSummary(file: ParsedFile): Promise<FileSummaryResult> {
+    if (this.mode === "heuristic") {
+      return {
+        relativePath: file.relativePath,
+        shortSummary: this.heuristicShortSummary(file),
+        detailedSummary: this.heuristicDetailedSummary(file),
+      }
+    }
+
+    try {
+      return await this.generateFileSummaryLLM(file)
+    } catch {
+      return {
+        relativePath: file.relativePath,
+        shortSummary: this.heuristicShortSummary(file),
+        detailedSummary: this.heuristicDetailedSummary(file),
+      }
+    }
+  }
 
   /**
    * Generate summary cho một file từ symbols của nó.
    * Feed chỉ signatures + docComments — không feed full source.
    */
-  async generateFileSummary(file: ParsedFile): Promise<FileSummaryResult> {
+  private async generateFileSummaryLLM(file: ParsedFile): Promise<FileSummaryResult> {
     const signaturesText = this.buildSignaturesText(file.symbols)
     const exportsList = file.exports.join(", ")
 
-    const prompt = `You are analyzing a TypeScript file to create a concise index entry.
+    const prompt = `You are analyzing a source file to create a concise index entry.
 
 File: ${file.relativePath}
+Language: ${file.language}
 Exports: ${exportsList || "none"}
 
 Symbols (signatures only):
@@ -50,8 +93,8 @@ Respond with ONLY a JSON object in this exact format, no markdown:
     })
 
     const parsed = this.parseJsonResponse(response.content, {
-      short: `${file.relativePath} — TypeScript module`,
-      detailed: `Contains: ${exportsList}`,
+      short: this.heuristicShortSummary(file),
+      detailed: this.heuristicDetailedSummary(file),
     })
 
     return {
@@ -61,15 +104,52 @@ Respond with ONLY a JSON object in this exact format, no markdown:
     }
   }
 
+  private heuristicShortSummary(file: ParsedFile): string {
+    const exported = file.symbols.filter((s) => s.isExported).map((s) => s.name)
+    const top = (exported.length > 0 ? exported : file.symbols.map((s) => s.name)).slice(0, 5)
+    const suffix = top.length > 0 ? ` (${top.join(", ")})` : ""
+    return `${file.relativePath} — ${file.language} file with ${file.symbols.length} symbols${suffix}`
+  }
+
+  private heuristicDetailedSummary(file: ParsedFile): string {
+    const kinds = new Map<string, number>()
+    for (const s of file.symbols) {
+      kinds.set(s.kind, (kinds.get(s.kind) ?? 0) + 1)
+    }
+    const kindText = Array.from(kinds.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([k, v]) => `${k}:${v}`)
+      .join(", ")
+
+    const exportsList = file.exports.slice(0, 12).join(", ")
+    const internalDeps = file.internalImports.length
+    const externalDeps = file.externalImports.length
+
+    const parts = [
+      `Exports: ${exportsList || "none"}`,
+      `Deps: internal ${internalDeps}, external ${externalDeps}`,
+      kindText ? `Symbols: ${kindText}` : "",
+    ].filter(Boolean)
+
+    return parts.join(". ")
+  }
+
   /**
    * Batch generate summaries cho nhiều files.
    * Gọi LLM song song với concurrency limit.
    */
   async generateFileSummaries(
     files: ParsedFile[],
-    concurrency = 5
+    concurrency = 5,
+    options: {
+      cache?: SummaryCache | undefined
+      getHash?: ((file: ParsedFile) => string) | undefined
+    } = {}
   ): Promise<Map<string, FileSummaryResult>> {
     const results = new Map<string, FileSummaryResult>()
+    const cache = options.cache
+    const getHash = options.getHash
 
     // Process theo batch để tránh rate limit
     for (let i = 0; i < files.length; i += concurrency) {
@@ -77,14 +157,59 @@ Respond with ONLY a JSON object in this exact format, no markdown:
       const batchResults = await Promise.all(
         batch.map(async (file) => {
           try {
-            return await this.generateFileSummary(file)
-          } catch {
-            // Fallback nếu LLM call fail
-            return {
-              relativePath: file.relativePath,
-              shortSummary: `${file.relativePath} — TypeScript module`,
-              detailedSummary: `Exports: ${file.exports.join(", ")}`,
+            const gitHash = getHash ? getHash(file) : ""
+            const cached = cache?.[file.relativePath]
+            if (cached && cached.gitHash === gitHash && cached.shortSummary && cached.detailedSummary) {
+              return {
+                relativePath: file.relativePath,
+                shortSummary: cached.shortSummary,
+                detailedSummary: cached.detailedSummary,
+              }
             }
+
+            if (this.mode === "heuristic") {
+              const result = {
+                relativePath: file.relativePath,
+                shortSummary: this.heuristicShortSummary(file),
+                detailedSummary: this.heuristicDetailedSummary(file),
+              }
+              if (cache && gitHash) {
+                cache[file.relativePath] = {
+                  gitHash,
+                  shortSummary: result.shortSummary,
+                  detailedSummary: result.detailedSummary,
+                  updatedAt: Date.now(),
+                }
+              }
+              return result
+            }
+
+            const llmResult = await this.generateFileSummaryLLM(file)
+            if (cache && gitHash) {
+              cache[file.relativePath] = {
+                gitHash,
+                shortSummary: llmResult.shortSummary,
+                detailedSummary: llmResult.detailedSummary,
+                updatedAt: Date.now(),
+              }
+            }
+            return llmResult
+          } catch {
+            const fallback = {
+              relativePath: file.relativePath,
+              shortSummary: this.heuristicShortSummary(file),
+              detailedSummary: this.heuristicDetailedSummary(file),
+            }
+            const gitHash = getHash ? getHash(file) : ""
+            if (cache && gitHash) {
+              cache[file.relativePath] = {
+                gitHash,
+                shortSummary: fallback.shortSummary,
+                detailedSummary: fallback.detailedSummary,
+                updatedAt: Date.now(),
+              }
+            }
+            return fallback
           }
         })
       )
@@ -107,11 +232,22 @@ Respond with ONLY a JSON object in this exact format, no markdown:
       return { dirPath, shortSummary: `Module at ${dirPath}` }
     }
 
+    if (this.mode === "heuristic") {
+      const sample = fileSummaries
+        .map((f) => f.shortSummary)
+        .filter(Boolean)
+        .slice(0, 6)
+        .join("; ")
+
+      const suffix = sample ? ` — ${sample}` : ""
+      return { dirPath, shortSummary: `${dirPath} — ${fileSummaries.length} files${suffix}` }
+    }
+
     const fileList = fileSummaries
       .map((f) => `- ${f.relativePath}: ${f.shortSummary}`)
       .join("\n")
 
-    const prompt = `Summarize this TypeScript module (directory) in 1-2 sentences based on its files.
+    const prompt = `Summarize this code module (directory) in 1-2 sentences based on its files.
 
 Module: ${dirPath}
 Files:

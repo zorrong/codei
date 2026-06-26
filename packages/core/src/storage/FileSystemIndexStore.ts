@@ -9,6 +9,7 @@ import type {
   IndexStoreMeta,
   StaleFile,
 } from "../types/IndexStore.js"
+import type { SummaryCache } from "../llm/SummaryGenerator.js"
 import * as fs from "fs/promises"
 import * as fsSync from "fs"
 import * as path from "path"
@@ -19,12 +20,14 @@ export class FileSystemIndexStore implements IndexStore {
   private readonly treePath: string
   private readonly metaPath: string
   private readonly symbolsDir: string
+  private readonly summariesPath: string
 
   constructor(projectRoot: string, indexDirName = ".index") {
     this.indexDir = path.join(projectRoot, indexDirName)
     this.treePath = path.join(this.indexDir, "tree.json")
     this.metaPath = path.join(this.indexDir, "meta.json")
     this.symbolsDir = path.join(this.indexDir, "symbols")
+    this.summariesPath = path.join(this.indexDir, "summaries.json")
   }
 
   async exists(): Promise<boolean> {
@@ -78,6 +81,22 @@ export class FileSystemIndexStore implements IndexStore {
     const filePath = this.symbolFilePath(node.filePath)
     await fs.mkdir(path.dirname(filePath), { recursive: true })
     await fs.writeFile(filePath, JSON.stringify(node, null, 2), "utf-8")
+  }
+
+  async loadSummaryCache(): Promise<SummaryCache> {
+    try {
+      const content = await fs.readFile(this.summariesPath, "utf-8")
+      return JSON.parse(content) as SummaryCache
+    } catch {
+      return {}
+    }
+  }
+
+  async saveSummaryCache(cache: SummaryCache): Promise<void> {
+    await this.ensureDirs()
+    const tmp = this.summariesPath + ".tmp"
+    await fs.writeFile(tmp, JSON.stringify(cache, null, 2), "utf-8")
+    await fs.rename(tmp, this.summariesPath)
   }
 
   async deleteFileNode(relativePath: string): Promise<void> {

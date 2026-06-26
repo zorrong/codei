@@ -13,6 +13,7 @@ import { FileScanner } from "../storage/FileScanner.js"
 import { FileWatcher, type FileChange } from "./FileWatcher.js"
 import { ParallelSymbolExtractor } from "../retrieval/ParallelSymbolExtractor.js"
 import * as path from "path"
+import type { SummaryMode } from "../llm/SummaryGenerator.js"
 
 export interface IndexManagerOptions {
   projectRoot: string
@@ -21,6 +22,7 @@ export interface IndexManagerOptions {
   adapters: LanguageAdapter[]
   indexDir?: string
   verbose?: boolean
+  summaryMode?: SummaryMode
 }
 
 export interface BuildResult {
@@ -76,6 +78,7 @@ export class IndexManager {
       ...(options.projectName !== undefined && { projectName: options.projectName }),
       llmClient: options.llmClient,
       ...(options.verbose !== undefined && { verbose: options.verbose }),
+      ...(options.summaryMode !== undefined && { summaryMode: options.summaryMode }),
     })
     this.log = options.verbose === true ? console.log : () => {}
   }
@@ -93,6 +96,9 @@ export class IndexManager {
     const parsedFiles = await this.parseFiles(allFiles)
     this.log(`[IndexManager] Parsed ${parsedFiles.length} files`)
 
+    const summaryCache = await this.store.loadSummaryCache()
+    this.builder.setSummaryCache(summaryCache)
+
     const tree = await this.builder.build(parsedFiles)
 
     const symbolsIndexed = Object.values(tree.nodes).filter(
@@ -109,6 +115,7 @@ export class IndexManager {
       totalFiles: parsedFiles.length,
       totalSymbols: symbolsIndexed,
     })
+    await this.store.saveSummaryCache(this.builder.getSummaryCache())
 
     const durationMs = Date.now() - start
     this.log(`[IndexManager] Build complete in ${durationMs}ms`)
@@ -124,6 +131,8 @@ export class IndexManager {
 
     const meta = await this.store.loadMeta()
     const existingTree = await this.store.loadTree()
+    const summaryCache = await this.store.loadSummaryCache()
+    this.builder.setSummaryCache(summaryCache)
 
     if (!meta || !existingTree) {
       this.log("[IndexManager] No existing index — running full build...")
@@ -198,6 +207,7 @@ export class IndexManager {
       totalFiles: Object.values(updatedTree.nodes).filter((n) => n?.level === "file").length,
       totalSymbols,
     })
+    await this.store.saveSummaryCache(this.builder.getSummaryCache())
 
     return {
       tree: updatedTree,

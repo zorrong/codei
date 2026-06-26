@@ -26,6 +26,7 @@ export interface CodeIndexConfig {
   indexDir: string
   /** Project name hiển thị trong index */
   projectName?: string
+  summaryMode?: "llm" | "heuristic" | "auto"
   /** Verbose logging */
   verbose: boolean
   /** HTTP server API key (optional). If set, /query, /status, /update require auth. */
@@ -57,6 +58,7 @@ const DEFAULT_GLOBAL_CONFIG_DIR = path.join(os.homedir(), ".codeindex")
 const PROJECT_LOCAL_CONFIG_KEYS: Array<keyof CodeIndexConfig> = [
   "indexDir",
   "projectName",
+  "summaryMode",
   "verbose",
   "serverApiKey",
   "serverCorsOrigin",
@@ -290,6 +292,7 @@ export function loadConfig(
     model: "gpt-4o",
     apiKey: "",
     indexDir: ".index",
+    summaryMode: "heuristic",
     verbose: false,
   }
 
@@ -375,6 +378,7 @@ export function inspectConfig(
     model: "gpt-4o",
     apiKey: "",
     indexDir: ".index",
+    summaryMode: "heuristic",
     verbose: false,
   }
 
@@ -383,6 +387,7 @@ export function inspectConfig(
     model: { source: "default", location: "built-in defaults" },
     apiKey: { source: "default", location: "built-in defaults" },
     indexDir: { source: "default", location: "built-in defaults" },
+    summaryMode: { source: "default", location: "built-in defaults" },
     verbose: { source: "default", location: "built-in defaults" },
   }
 

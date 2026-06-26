@@ -31,7 +31,7 @@ export class HttpServer {
   private readonly config: CodeIndexConfig
   private readonly llmClient: LLMClient
   private server: http.Server | null = null
-  private readonly traversalCache = new TraversalCache()
+  private readonly traversalCache: TraversalCache
   private readonly serverApiKey: string | undefined
   private readonly corsOrigin: string
   private readonly maxBodyBytes: number
@@ -44,6 +44,9 @@ export class HttpServer {
     this.projectRoot = options.projectRoot
     this.config = options.config
     this.llmClient = options.llmClient
+    this.traversalCache = new TraversalCache({
+      persistencePath: path.join(this.projectRoot, this.config.indexDir, "traversal-cache.json"),
+    })
     this.serverApiKey = options.config.serverApiKey
     this.corsOrigin = options.config.serverCorsOrigin ?? "*"
     this.maxBodyBytes = options.config.serverMaxBodyBytes ?? 1024 * 1024
