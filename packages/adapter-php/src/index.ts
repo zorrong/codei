@@ -1,5 +1,5 @@
 /**
- * @codeindex/adapter-php — PHP language adapter entry point.
+ * pnftrading_codei-adapter-php — PHP language adapter entry point.
  */
 
 export { PhpAdapter } from "./PhpAdapter.js"

@@ -2,7 +2,7 @@
  * CSharpAdapter — implement LanguageAdapter for C#.
  */
 
-import type { LanguageAdapter, ParsedFile } from "@codeindex/core"
+import type { LanguageAdapter, ParsedFile } from "pnftrading_codei-core"
 import * as path from "path"
 import { CSharpAstParser } from "./CSharpAstParser.js"
 import { CSharpDependencyResolver } from "./CSharpDependencyResolver.js"

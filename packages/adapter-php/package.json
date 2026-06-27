@@ -1,5 +1,5 @@
 {
-  "name": "@codeindex/adapter-php",
+  "name": "pnftrading_codei-adapter-php",
   "version": "0.1.1",
   "description": "PHP language adapter using regex-based extraction",
   "type": "module",
@@ -16,7 +16,7 @@
     "test": "echo 'adapter-php: no tests yet'"
   },
   "dependencies": {
-    "@codeindex/core": "workspace:*"
+    "pnftrading_codei-core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

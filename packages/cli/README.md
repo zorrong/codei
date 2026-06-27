@@ -1,16 +1,16 @@
-# @codeindex/cli
+# pnftrading_codei
 
 **Vectorless, reasoning-based code index for AI context retrieval.**
 
 > Cut your AI coding costs by 95%. `codei` gives AI exactly the context it needs — nothing more.
 
-> Brand note: the product and CLI are now called `codei`. The `i` stands for both `index` and `intelligent` context retrieval. The published CLI package is `@codeindex/cli`, while the core and adapter packages are published under `@codeindex/*`.
+> Brand note: the product and CLI are now called `codei`. The `i` stands for both `index` and `intelligent` context retrieval. The published CLI package is `pnftrading_codei`, while the core and adapter packages are published under `pnftrading_codei-*`.
 
 ## Quick Start
 
 ```bash
 # Install
-npm install -g @codeindex/cli
+npm install -g pnftrading_codei
 
 # Setup once globally
 codei setup

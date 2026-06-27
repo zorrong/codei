@@ -3,7 +3,7 @@
  * Dùng Python's ast module để parse source code.
  */
 
-import type { LanguageAdapter, ParsedFile } from "@codeindex/core"
+import type { LanguageAdapter, ParsedFile } from "pnftrading_codei-core"
 import * as path from "path"
 import { PythonAstParser } from "./PythonAstParser.js"
 import { PythonDependencyResolver } from "./PythonDependencyResolver.js"

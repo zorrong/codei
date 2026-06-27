@@ -9,8 +9,8 @@ import { inspectConfig, loadConfig, resolveApiKey } from "../src/config.js"
 import * as fs from "fs/promises"
 import * as path from "path"
 import * as os from "os"
-import type { LLMClient, LLMResponse } from "@codeindex/core"
-import { FileSystemIndexStore, TreeBuilder } from "@codeindex/core"
+import type { LLMClient, LLMResponse } from "pnftrading_codei-core"
+import { FileSystemIndexStore, TreeBuilder } from "pnftrading_codei-core"
 
 // ─── Mock LLM ────────────────────────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-# @codeindex/adapter-rust
+# pnftrading_codei-adapter-rust
 
 **Rust language adapter for codei** — Parses Rust items, modules, and functions.
 
@@ -10,12 +10,12 @@
 
 - Extracts top-level symbols for `codei`
 - Captures imports or module references when possible
-- Fits the standard `LanguageAdapter` interface used by `@codeindex/core`
+- Fits the standard `LanguageAdapter` interface used by `pnftrading_codei-core`
 
 ## Usage
 
 ```typescript
-import { RustAdapter } from "@codeindex/adapter-rust"
+import { RustAdapter } from "pnftrading_codei-adapter-rust"
 
 const adapter = new RustAdapter()
 ```

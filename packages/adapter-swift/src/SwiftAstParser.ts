@@ -5,7 +5,7 @@
 
 import * as fs from "fs"
 import * as path from "path"
-import type { RawSymbol, ParsedFile } from "@codeindex/core"
+import type { RawSymbol, ParsedFile } from "pnftrading_codei-core"
 
 const SWIFT_KEYWORDS = new Set([
   "actor", "any", "as", "associatedtype", "async", "await", "break", "case", "catch",

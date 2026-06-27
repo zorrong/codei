@@ -1,5 +1,5 @@
 /**
- * @codeindex/adapter-rust — Rust language adapter entry point.
+ * pnftrading_codei-adapter-rust — Rust language adapter entry point.
  */
 
 export { RustAdapter } from "./RustAdapter.js"

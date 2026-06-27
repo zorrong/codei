@@ -4,7 +4,7 @@
 
 import * as fs from "fs"
 import * as path from "path"
-import type { RawSymbol, ParsedFile } from "@codeindex/core"
+import type { RawSymbol, ParsedFile } from "pnftrading_codei-core"
 
 const PYTHON_STDLIB = new Set([
   "sys", "os", "re", "json", "math", "time", "datetime", "collections",

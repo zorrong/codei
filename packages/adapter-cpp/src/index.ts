@@ -1,5 +1,5 @@
 /**
- * @codeindex/adapter-cpp — C/C++ language adapter entry point.
+ * pnftrading_codei-adapter-cpp — C/C++ language adapter entry point.
  */
 
 export { CppAdapter } from "./CppAdapter.js"

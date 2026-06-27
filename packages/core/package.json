@@ -1,5 +1,5 @@
 {
-  "name": "@codeindex/core",
+  "name": "pnftrading_codei-core",
   "version": "0.1.1",
   "description": "Core engine — tree index, retrieval logic, interfaces",
   "type": "module",

@@ -1,4 +1,4 @@
-# @codeindex/adapter-csharp
+# pnftrading_codei-adapter-csharp
 
 **C# language adapter for codei** — Parses C# types, methods, constructors, and properties.
 
@@ -10,12 +10,12 @@
 
 - Extracts top-level symbols for `codei`
 - Captures imports or module references when possible
-- Fits the standard `LanguageAdapter` interface used by `@codeindex/core`
+- Fits the standard `LanguageAdapter` interface used by `pnftrading_codei-core`
 
 ## Usage
 
 ```typescript
-import { CSharpAdapter } from "@codeindex/adapter-csharp"
+import { CSharpAdapter } from "pnftrading_codei-adapter-csharp"
 
 const adapter = new CSharpAdapter()
 ```

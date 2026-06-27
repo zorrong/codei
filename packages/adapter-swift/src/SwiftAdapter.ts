@@ -2,7 +2,7 @@
  * SwiftAdapter — implement LanguageAdapter for Swift.
  */
 
-import type { LanguageAdapter, ParsedFile } from "@codeindex/core"
+import type { LanguageAdapter, ParsedFile } from "pnftrading_codei-core"
 import * as path from "path"
 import { SwiftAstParser } from "./SwiftAstParser.js"
 import { SwiftDependencyResolver } from "./SwiftDependencyResolver.js"

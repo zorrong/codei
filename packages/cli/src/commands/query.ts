@@ -6,7 +6,7 @@ import type { Command } from "commander"
 import * as path from "path"
 import { loadConfig } from "../config.js"
 import { createLLMClient, createIndexManager, createNoopLLMClient } from "../createServices.js"
-import { FileSystemIndexStore, Retriever, TraversalCache } from "@codeindex/core"
+import { FileSystemIndexStore, Retriever, TraversalCache } from "pnftrading_codei-core"
 
 type VerboseCacheStatus = "exact" | "similar" | "miss"
 

@@ -7,7 +7,7 @@ import * as fs from "fs/promises"
 import * as path from "path"
 import { type CodeiConfig, loadConfig } from "../config.js"
 import { createIndexManager, createNoopLLMClient } from "../createServices.js"
-import { FileSystemIndexStore, TraversalCache } from "@codeindex/core"
+import { FileSystemIndexStore, TraversalCache } from "pnftrading_codei-core"
 
 export function registerStatusCommand(program: Command): void {
   program

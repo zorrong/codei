@@ -15,7 +15,7 @@ import {
   VariableDeclarationKind,
   type JSDoc,
 } from "ts-morph"
-import type { RawSymbol, SymbolKind } from "@codeindex/core"
+import type { RawSymbol, SymbolKind } from "pnftrading_codei-core"
 
 export class SymbolExtractor {
   extract(sourceFile: SourceFile): RawSymbol[] {

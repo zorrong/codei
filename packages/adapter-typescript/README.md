@@ -1,4 +1,4 @@
-# @codeindex/adapter-typescript
+# pnftrading_codei-adapter-typescript
 
 **TypeScript/JavaScript language adapter for codei** — Uses ts-morph for full AST parsing.
 
@@ -20,7 +20,7 @@
 ## Usage
 
 ```typescript
-import { TypeScriptAdapter } from "@codeindex/adapter-typescript"
+import { TypeScriptAdapter } from "pnftrading_codei-adapter-typescript"
 
 const adapter = new TypeScriptAdapter()
 

@@ -2,7 +2,7 @@
  * GoAdapter — implement LanguageAdapter for Go.
  */
 
-import type { LanguageAdapter, ParsedFile } from "@codeindex/core"
+import type { LanguageAdapter, ParsedFile } from "pnftrading_codei-core"
 import * as path from "path"
 import { GoAstParser } from "./GoAstParser.js"
 import { GoDependencyResolver } from "./GoDependencyResolver.js"

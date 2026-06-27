@@ -1,4 +1,4 @@
-# @codeindex/adapter-cpp
+# pnftrading_codei-adapter-cpp
 
 **C/C++ language adapter for codei** — Parses C/C++ classes, structs, and functions.
 
@@ -13,12 +13,12 @@
 
 - Extracts top-level symbols for `codei`
 - Captures imports or module references when possible
-- Fits the standard `LanguageAdapter` interface used by `@codeindex/core`
+- Fits the standard `LanguageAdapter` interface used by `pnftrading_codei-core`
 
 ## Usage
 
 ```typescript
-import { CppAdapter } from "@codeindex/adapter-cpp"
+import { CppAdapter } from "pnftrading_codei-adapter-cpp"
 
 const adapter = new CppAdapter()
 ```

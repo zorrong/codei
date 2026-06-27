@@ -1,5 +1,5 @@
 /**
- * @codeindex/adapter-go — Go language adapter entry point.
+ * pnftrading_codei-adapter-go — Go language adapter entry point.
  */
 
 export { GoAdapter } from "./GoAdapter.js"
