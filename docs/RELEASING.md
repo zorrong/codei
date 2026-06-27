@@ -65,7 +65,7 @@ pnpm run release:publish
 ## Notes
 
 - The GitHub workflow at `.github/workflows/release.yml` uses `changesets/action` to open or update a release PR automatically on `main`.
-- To enable npm publishing from GitHub Actions, add an `NPM_TOKEN` repository secret with publish access to the `@codeindex` scope and the `@codei` scope.
+- To enable npm publishing from GitHub Actions, add an `NPM_TOKEN` repository secret with publish access to the `@codei` scope.
 - `release:publish` runs `release:check` first.
 - Packages are published in topological dependency order so `@codei/core` is available before adapters and `@codei/cli`.
 - The website package is private and is not part of npm publishing.

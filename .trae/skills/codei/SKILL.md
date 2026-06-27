@@ -1,17 +1,17 @@
 ---
-name: "codeindex"
+name: "codei"
 description: "Retrieves relevant code context from a hierarchical index to reduce token usage and improve AI coding accuracy. Invoke when understanding codebase structure, following dependencies, or needing targeted code context for a task."
 ---
 
-# Codeindex — Vectorless Reasoning-Based Code Index
+# Codei — Vectorless Reasoning-Based Code Index
 
 ## Overview
 
-`codeindex` builds a hierarchical tree index of your codebase and uses LLM reasoning to retrieve only the relevant context you need — reducing token usage from **50,000+ tokens to ~1,000-3,000 tokens** per query.
+`codei` builds a hierarchical tree index of your codebase and uses LLM reasoning to retrieve only the relevant context you need — reducing token usage from **50,000+ tokens to ~1,000-3,000 tokens** per query.
 
 ## When to Invoke This Skill
 
-**Invoke codeindex when:**
+**Invoke codei when:**
 - User asks about how a feature/component works
 - Need to understand code structure or dependencies
 - Following import/dependency chains
@@ -28,66 +28,66 @@ description: "Retrieves relevant code context from a hierarchical index to reduc
 ## Prerequisites
 
 Before using this skill, ensure:
-1. `codeindex` is installed: `npm install -g @codeindex/codeindex` or run from source
-2. Project has been indexed: `codeindex index <project-path>`
-3. LLM API key is configured: `codeindex setup`
+1. `codei` is installed: `npm install -g @codei/cli` or run from source
+2. Project has been indexed: `codei index <project-path>`
+3. LLM API key is configured: `codei setup`
 
 ## Core Workflow
 
 ### 1. Check Index Status
 
 ```bash
-codeindex status <project-path>
+codei status <project-path>
 ```
 
 If index is stale or missing, rebuild:
 ```bash
-codeindex index <project-path>
+codei index <project-path>
 ```
 
 ### 2. Query for Context
 
 ```bash
-codeindex query "<your question>" --cwd <project-path>
+codei query "<your question>" --cwd <project-path>
 ```
 
 **Examples:**
 ```bash
 # Understand authentication flow
-codeindex query "How does JWT authentication work in this codebase?"
+codei query "How does JWT authentication work in this codebase?"
 
 # Find relevant service for a feature
-codeindex query "Where is user profile management implemented?"
+codei query "Where is user profile management implemented?"
 
 # Understand dependencies
-codeindex query "What does the order processing module depend on?"
+codei query "What does the order processing module depend on?"
 
 # Debug tracing
-codeindex query "Trace the request flow for API calls"
+codei query "Trace the request flow for API calls"
 ```
 
 ### 3. Get Detailed Context with Options
 
 ```bash
 # Include dependency signatures in output
-codeindex query "<question>" --cwd <path> --format text
+codei query "<question>" --cwd <path> --format text
 
 # JSON output for programmatic use
-codeindex query "<question>" --cwd <path> --format json
+codei query "<question>" --cwd <path> --format json
 
 # Verbose mode shows traversal path
-codeindex query "<question>" --cwd <path> --verbose
+codei query "<question>" --cwd <path> --verbose
 
 # Control output size
-codeindex query "<question>" --cwd <path> --max-tokens 2000
-codeindex query "<question>" --cwd <path> --max-symbols 5
+codei query "<question>" --cwd <path> --max-tokens 2000
+codei query "<question>" --cwd <path> --max-symbols 5
 ```
 
 ## HTTP Server Mode (Recommended for Frequent Use)
 
 Start the server once per project:
 ```bash
-codeindex serve <project-path> --port 3131
+codei serve <project-path> --port 3131
 ```
 
 Then query via HTTP:
@@ -139,7 +139,7 @@ class UserService { ... }
 ## Integration with AI Agents
 
 ### Claude Code
-Add to `~/.claude/tools/codeindex.sh`:
+Add to `~/.claude/tools/codei.sh`:
 ```bash
 #!/bin/bash
 QUERY="$1"
@@ -152,7 +152,7 @@ curl -s -X POST http://localhost:3131/query \
 ### Cursor/Windsurf
 Create `.cursorrules` or `.windsurfrules`:
 ```markdown
-# Codeindex Context Retrieval
+# Codei Context Retrieval
 When you need to understand the codebase:
 1. Run: curl -s -X POST http://localhost:3131/query -d '{"query": "YOUR_QUERY"}' | jq -r '.context'
 2. Use the output for context before implementing
@@ -161,8 +161,8 @@ When you need to understand the codebase:
 ### Cline (VSCode)
 In custom instructions or Plan Mode:
 ```
-Use codeindex query "<your question>" to get relevant code context.
-Start server with: codeindex serve . --port 3131
+Use codei query "<your question>" to get relevant code context.
+Start server with: codei serve . --port 3131
 ```
 
 ## Architecture Notes
@@ -190,8 +190,8 @@ Project
 
 | Issue | Solution |
 |-------|----------|
-| "No index found" | Run `codeindex index <path>` first |
-| "API key not found" | Run `codeindex setup` or set `OPENAI_API_KEY` env var |
-| Stale results | Run `codeindex update <path>` after file changes |
+| "No index found" | Run `codei index <path>` first |
+| "API key not found" | Run `codei setup` or set `OPENAI_API_KEY` env var |
+| Stale results | Run `codei update <path>` after file changes |
 | High token usage | Reduce `--max-tokens` or `--max-symbols` |
-| Slow queries | Use local LLM (Ollama) via `codeindex setup` with `--provider ollama` |
+| Slow queries | Use local LLM (Ollama) via `codei setup` with `--provider ollama` |

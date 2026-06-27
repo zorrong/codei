@@ -8,6 +8,19 @@ import { loadConfig } from "../config.js"
 import { createLLMClient, createIndexManager, createNoopLLMClient } from "../createServices.js"
 import { FileSystemIndexStore, Retriever, TraversalCache } from "@codei/core"
 
+type VerboseCacheStatus = "exact" | "similar" | "miss"
+
+export async function retrieveWithVerboseCacheStatus(
+  retriever: Pick<Retriever, "retrieve">,
+  cache: Pick<TraversalCache, "peek">,
+  tree: Awaited<ReturnType<FileSystemIndexStore["loadTree"]>>,
+  query: { query: string; maxOutputTokens: number; expandDeps: boolean }
+): Promise<{ result: Awaited<ReturnType<Retriever["retrieve"]>>; cacheStatus: VerboseCacheStatus }> {
+  const cacheStatus = cache.peek(query.query)?.kind ?? "miss"
+  const result = await retriever.retrieve(tree!, query)
+  return { result, cacheStatus }
+}
+
 export function registerQueryCommand(program: Command): void {
   program
     .command("query <text>")
@@ -55,7 +68,7 @@ export function registerQueryCommand(program: Command): void {
           },
         })
 
-        const result = await retriever.retrieve(tree, {
+        const { result, cacheStatus } = await retrieveWithVerboseCacheStatus(retriever, cache, tree, {
           query: queryText,
           maxOutputTokens: parseInt(options["maxTokens"] as string ?? "4000"),
           expandDeps: options["deps"] !== false,
@@ -77,11 +90,10 @@ export function registerQueryCommand(program: Command): void {
         } else {
           // Text format — raw context sẵn sàng paste vào AI
           if (options["verbose"] === true) {
-            const peek = cache.peek(queryText)
             console.error(`[codei] Query: "${queryText}"`)
             console.error(`[codei] Traversal: ${result.traversalPath.join(" → ")}`)
             console.error(`[codei] Tokens: ~${result.estimatedTokens}`)
-            console.error(`[codei] Cache: ${peek ? peek.kind : "miss"}`)
+            console.error(`[codei] Cache: ${cacheStatus}`)
             console.error("---")
           }
 

@@ -147,7 +147,7 @@ describe("loadConfig", () => {
     )
     await fs.writeFile(
       path.join(tmpDir, ".codei.json"),
-      JSON.stringify({ provider: "openai", model: "codeindex", indexDir: ".myindex-2" })
+      JSON.stringify({ provider: "openai", model: "codei", indexDir: ".myindex-2" })
     )
 
     const config = loadConfig(tmpDir)

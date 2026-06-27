@@ -33,7 +33,7 @@
     "llm",
     "rag"
   ],
-  "author": "CodeIndex Team",
+  "author": "Codei Team",
   "license": "MIT",
   "publishConfig": {
     "access": "public"

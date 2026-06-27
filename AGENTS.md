@@ -46,7 +46,7 @@ Start server with: codei serve . --port 3131
 ```
 
 ### Trae Agent
-Load the `codeindex` skill from `.trae/skills/codeindex/SKILL.md` for full integration.
+Load the `codei` skill from `.trae/skills/codei/SKILL.md` for full integration.
 
 ## ❌ DON'T vs ✅ DO
 

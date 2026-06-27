@@ -1,12 +1,12 @@
-# Project Rules: codeindex
+# Project Rules: codei
 
 ## Agent Skill Integration
 
-This project defines a universal `codeindex` skill at `.trae/skills/codeindex/SKILL.md`.
+This project defines a universal `codei` skill at `.trae/skills/codei/SKILL.md`.
 
 ## Mandatory Workflow
 
-**Before performing ANY of these tasks, the agent MUST load and use the codeindex skill:**
+**Before performing ANY of these tasks, the agent MUST load and use the codei skill:**
 
 1. **Understanding codebase structure** — Any question about how code is organized
 2. **Following dependencies** — Tracing imports, understanding coupling
@@ -18,7 +18,7 @@ This project defines a universal `codeindex` skill at `.trae/skills/codeindex/SK
 ## Skill Loading
 
 ```
-When working with codeindex codebase, invoke the "codeindex" skill.
+When working with codei codebase, invoke the "codei" skill.
 ```
 
 ## Quick Reference

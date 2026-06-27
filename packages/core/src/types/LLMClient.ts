@@ -37,7 +37,7 @@ export interface LLMClient {
 }
 
 /**
- * Config chung cho LLM usage trong codeindex.
+ * Config chung cho LLM usage trong codei.
  * Có thể override per-operation nếu cần.
  */
 export interface LLMConfig {

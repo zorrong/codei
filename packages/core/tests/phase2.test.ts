@@ -265,7 +265,7 @@ describe("FileSystemIndexStore", () => {
   let store: FileSystemIndexStore
 
   beforeAll(async () => {
-    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codeindex-test-"))
+    tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "codei-test-"))
     store = new FileSystemIndexStore(tmpDir)
   })
 
