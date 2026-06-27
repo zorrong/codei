@@ -148,28 +148,18 @@ At 10 queries/day, that's **$15-45/month** saved.
 
 ## IDE Integrations
 
-### Claude Code
+The simplest integration is to add a project-level `AGENTS.md` rule that tells the IDE agent to run `codei query` before answering codebase questions or editing code.
 
-```bash
-# Add to ~/.claude/tools/codei.sh
-curl -s -X POST http://localhost:3131/query \
-  -d '{"query": "$1", "maxTokens": 3000}' | jq -r '.context'
-```
+See the full Vietnamese guide: [docs/IDE-INTEGRATION.md](./docs/IDE-INTEGRATION.md).
 
-### Cursor / Windsurf
+Quick rule for Codex, Claude Code, Cursor, Windsurf, Cline, Antigravity, and similar AI IDEs:
 
-Add to your `.cursorrules`:
+```markdown
+Before analyzing or editing this repository, run:
 
-```
-When you need codebase context, run:
-  curl -s -X POST http://localhost:3131/query -d '{"query": "YOUR_QUESTION"}' | jq -r '.context'
-```
+codei query "<task-specific question>"
 
-### VSCode (Cline)
-
-```
-Use codei query "your question" to get relevant code context.
-Start server: codei serve . --port 3131
+Use the output as the primary code context. After edits, run `codei update`.
 ```
 
 ***
