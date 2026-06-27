@@ -32,13 +32,22 @@ Every `CTRL+C → CTRL+V` to an AI chat burns tokens on code that has nothing to
 
 ## The Solution
 
-`codei` builds a **hierarchical tree index** of your codebase. When you ask a question, LLM reasoning selects exactly which modules, files, and symbols are relevant — then returns only that.
+`codei` turns your repository into a compact, queryable map that AI tools can use on demand. Instead of asking an assistant to inspect every file, you build a local index once and let `codei` retrieve the few modules, files, symbols, and dependency signatures that matter for the current question.
+
+The workflow is deliberately simple:
+
+1. `codei index .` scans the project, respects your ignore rules, parses supported languages, and stores a local `.index/` tree.
+2. `codei query "<your question>"` uses the index to find the relevant parts of the codebase.
+3. The output is already formatted for an AI chat or coding agent, including selected source snippets plus lightweight dependency context.
+4. After code changes, `codei update` refreshes the index incrementally so future queries stay current.
+
+This makes `codei` useful as a context layer for Codex, Claude Code, Cursor, Windsurf, Cline, Antigravity, and any agent that can run shell commands or call the local HTTP server. The agent asks `codei` first, then works with targeted context instead of guessing which files to open.
 
 **Result: \~1,000-3,000 tokens per query instead of 50,000+**
 
 ```
 Before: Paste 200 files (50KB) → Ask "fix my login bug"
-After:  Paste 3 files (2KB)   → Same answer
+After:  Query codei, paste 3 focused files (2KB) → Same answer
 ```
 
 ***
