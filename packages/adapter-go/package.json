@@ -1,6 +1,6 @@
 {
   "name": "pnftrading_codei-adapter-go",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Go language adapter using regex-based AST extraction",
   "type": "module",
   "main": "./dist/index.js",

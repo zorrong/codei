@@ -1,6 +1,6 @@
 {
   "name": "pnftrading_codei-adapter-java",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Java language adapter using regex-based extraction",
   "type": "module",
   "main": "./dist/index.js",

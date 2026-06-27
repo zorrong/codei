@@ -5,6 +5,7 @@
 Thay vì dump toàn bộ codebase vào prompt (50k+ tokens), `codei` build một hierarchical tree index và dùng LLM reasoning để tìm đúng context — giảm từ **50,000+ token xuống còn ~1,000-3,000 token** per query.
 
 > Ghi chú thương hiệu: `codei` là tên mới của `Codeindex`. Chữ `i` mang hai ý nghĩa: `index` và `intelligent`. Lệnh CLI là `codei`, gói npm để cài CLI là `pnftrading_codei`, còn core/adapters được publish dưới `pnftrading_codei-*`.
+> npm package: https://www.npmjs.com/package/pnftrading_codei
 
 Inspired by [PageIndex](https://github.com/VectifyAI/PageIndex), adapted cho codebase TypeScript.
 

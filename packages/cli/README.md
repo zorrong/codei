@@ -5,6 +5,7 @@
 > Cut your AI coding costs by 95%. `codei` gives AI exactly the context it needs — nothing more.
 
 > Brand note: the product and CLI are now called `codei`. The `i` stands for both `index` and `intelligent` context retrieval. The published CLI package is `pnftrading_codei`, while the core and adapter packages are published under `pnftrading_codei-*`.
+> npm package: https://www.npmjs.com/package/pnftrading_codei
 
 ## Quick Start
 

@@ -3,6 +3,7 @@
 **Mỗi ngày bạn paste code vào ChatGPT, bạn đang đốt tiền cho những context không liên quan.**
 
 > Ghi chú thương hiệu: `codei` là tên mới của `Codeindex`. Chữ `i` đại diện cho cả `index` và `intelligent`. Lệnh CLI là `codei`, gói npm để cài CLI là `pnftrading_codei`, còn core/adapters được publish dưới `pnftrading_codei-*`.
+> npm package: https://www.npmjs.com/package/pnftrading_codei
 
 ***
 

@@ -1,6 +1,6 @@
 {
   "name": "pnftrading_codei-adapter-cpp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "C/C++ language adapter using regex-based extraction",
   "type": "module",
   "main": "./dist/index.js",
