@@ -5,7 +5,7 @@
 
 import * as fs from "fs"
 import * as path from "path"
-import type { RawSymbol, ParsedFile } from "@codei/core"
+import type { RawSymbol, ParsedFile } from "@pnftrading/codei-core"
 
 const PHP_KEYWORDS = new Set([
   "abstract", "and", "array", "as", "break", "callable", "case", "catch", "class",

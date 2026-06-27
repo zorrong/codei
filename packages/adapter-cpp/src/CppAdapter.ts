@@ -2,7 +2,7 @@
  * CppAdapter — implement LanguageAdapter for C/C++.
  */
 
-import type { LanguageAdapter, ParsedFile } from "@codei/core"
+import type { LanguageAdapter, ParsedFile } from "@pnftrading/codei-core"
 import * as path from "path"
 import { CppAstParser } from "./CppAstParser.js"
 import { CppDependencyResolver } from "./CppDependencyResolver.js"

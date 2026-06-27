@@ -1,6 +1,6 @@
 # API Reference
 
-> Brand note: `codei` is the new product and CLI name for `Codeindex`. The `i` stands for both `index` and `intelligent` context retrieval. The published CLI package is `@codei/cli`, while the core and adapter packages remain under `@codei/*`.
+> Brand note: `codei` is the new product and CLI name for `Codeindex`. The `i` stands for both `index` and `intelligent` context retrieval. The published CLI package is `@pnftrading/codei`, while the core and adapter packages are published under `@pnftrading/codei-*`.
 
 ## HTTP Server
 
@@ -267,7 +267,7 @@ When indexing, `codei` writes:
 ### IndexManager
 
 ```typescript
-import { IndexManager } from "@codei/core"
+import { IndexManager } from "@pnftrading/codei-core"
 
 const manager = new IndexManager({
   projectRoot: "/path/to/project",
@@ -294,7 +294,7 @@ manager.watch({
 ### TreeTraversal
 
 ```typescript
-import { TreeTraversal } from "@codei/core"
+import { TreeTraversal } from "@pnftrading/codei-core"
 
 const traversal = new TreeTraversal({
   tree,

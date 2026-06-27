@@ -1,5 +1,5 @@
 /**
- * @codei/adapter-csharp — C# language adapter entry point.
+ * @pnftrading/codei-adapter-csharp — C# language adapter entry point.
  */
 
 export { CSharpAdapter } from "./CSharpAdapter.js"

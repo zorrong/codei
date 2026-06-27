@@ -5,7 +5,7 @@
 
 import * as fs from "fs"
 import * as path from "path"
-import type { RawSymbol, ParsedFile } from "@codei/core"
+import type { RawSymbol, ParsedFile } from "@pnftrading/codei-core"
 
 const CSHARP_KEYWORDS = new Set([
   "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked",

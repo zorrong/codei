@@ -11,8 +11,8 @@
 
 import * as http from "http"
 import * as path from "path"
-import { FileSystemIndexStore, Retriever, TraversalCache } from "@codei/core"
-import type { LLMClient } from "@codei/core"
+import { FileSystemIndexStore, Retriever, TraversalCache } from "@pnftrading/codei-core"
+import type { LLMClient } from "@pnftrading/codei-core"
 import type { CodeiConfig } from "../config.js"
 import { createIndexManager } from "../createServices.js"
 

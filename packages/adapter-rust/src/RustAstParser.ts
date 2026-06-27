@@ -4,7 +4,7 @@
 
 import * as fs from "fs"
 import * as path from "path"
-import type { RawSymbol, ParsedFile } from "@codei/core"
+import type { RawSymbol, ParsedFile } from "@pnftrading/codei-core"
 
 const RUST_PRELUDE = new Set([
   "Option", "Result", "Vec", "Box", "String", "str", "usize", "u8", "u16", "u32", "u64", "u128",

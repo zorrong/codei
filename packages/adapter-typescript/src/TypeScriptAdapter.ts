@@ -3,7 +3,7 @@
  * Dùng ts-morph để parse AST, DependencyResolver để resolve imports.
  */
 
-import type { LanguageAdapter, ParsedFile, SupportedLanguage } from "@codei/core"
+import type { LanguageAdapter, ParsedFile, SupportedLanguage } from "@pnftrading/codei-core"
 import * as path from "path"
 import { TsMorphParser } from "./TsMorphParser.js"
 import { DependencyResolver } from "./DependencyResolver.js"

@@ -1,5 +1,5 @@
 {
-  "name": "@codei/adapter-rust",
+  "name": "@pnftrading/codei-adapter-rust",
   "version": "0.1.0",
   "description": "Rust language adapter using regex-based item extraction",
   "type": "module",
@@ -16,7 +16,7 @@
     "test": "echo 'adapter-rust: no tests yet'"
   },
   "dependencies": {
-    "@codei/core": "workspace:*"
+    "@pnftrading/codei-core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

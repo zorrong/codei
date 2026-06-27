@@ -1,5 +1,5 @@
 {
-  "name": "@codei/adapter-python",
+  "name": "@pnftrading/codei-adapter-python",
   "version": "0.1.0",
   "description": "Python language adapter using the standard ast module",
   "type": "module",
@@ -16,7 +16,7 @@
     "test": "echo 'adapter-python: no tests yet'"
   },
   "dependencies": {
-    "@codei/core": "workspace:*"
+    "@pnftrading/codei-core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

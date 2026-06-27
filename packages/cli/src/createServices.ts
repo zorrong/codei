@@ -3,9 +3,9 @@
  * Shared bởi tất cả CLI commands.
  */
 
-import type { LLMClient, LanguageAdapter } from "@codei/core"
-import { IndexManager } from "@codei/core"
-import { TypeScriptAdapter } from "@codei/adapter-typescript"
+import type { LLMClient, LanguageAdapter } from "@pnftrading/codei-core"
+import { IndexManager } from "@pnftrading/codei-core"
+import { TypeScriptAdapter } from "@pnftrading/codei-adapter-typescript"
 import { OpenAILLMClient, AnthropicLLMClient, GoogleLLMClient } from "./llm/LLMClients.js"
 import { type CodeiConfig, resolveApiKey } from "./config.js"
 
@@ -17,14 +17,14 @@ async function loadAllAdapters(verbose = false): Promise<LanguageAdapter[]> {
 
   // Dynamic import các adapters khác (safe fallback nếu chưa build)
   const optionalAdapters: Array<{ load: () => Promise<LanguageAdapter>; name: string }> = [
-    { name: "python", load: async () => { const { PythonAdapter } = await import("@codei/adapter-python"); return new PythonAdapter() } },
-    { name: "go", load: async () => { const { GoAdapter } = await import("@codei/adapter-go"); return new GoAdapter() } },
-    { name: "java", load: async () => { const { JavaAdapter } = await import("@codei/adapter-java"); return new JavaAdapter() } },
-    { name: "php", load: async () => { const { PhpAdapter } = await import("@codei/adapter-php"); return new PhpAdapter() } },
-    { name: "rust", load: async () => { const { RustAdapter } = await import("@codei/adapter-rust"); return new RustAdapter() } },
-    { name: "csharp", load: async () => { const { CSharpAdapter } = await import("@codei/adapter-csharp"); return new CSharpAdapter() } },
-    { name: "cpp", load: async () => { const { CppAdapter } = await import("@codei/adapter-cpp"); return new CppAdapter() } },
-    { name: "swift", load: async () => { const { SwiftAdapter } = await import("@codei/adapter-swift"); return new SwiftAdapter() } },
+    { name: "python", load: async () => { const { PythonAdapter } = await import("@pnftrading/codei-adapter-python"); return new PythonAdapter() } },
+    { name: "go", load: async () => { const { GoAdapter } = await import("@pnftrading/codei-adapter-go"); return new GoAdapter() } },
+    { name: "java", load: async () => { const { JavaAdapter } = await import("@pnftrading/codei-adapter-java"); return new JavaAdapter() } },
+    { name: "php", load: async () => { const { PhpAdapter } = await import("@pnftrading/codei-adapter-php"); return new PhpAdapter() } },
+    { name: "rust", load: async () => { const { RustAdapter } = await import("@pnftrading/codei-adapter-rust"); return new RustAdapter() } },
+    { name: "csharp", load: async () => { const { CSharpAdapter } = await import("@pnftrading/codei-adapter-csharp"); return new CSharpAdapter() } },
+    { name: "cpp", load: async () => { const { CppAdapter } = await import("@pnftrading/codei-adapter-cpp"); return new CppAdapter() } },
+    { name: "swift", load: async () => { const { SwiftAdapter } = await import("@pnftrading/codei-adapter-swift"); return new SwiftAdapter() } },
   ]
 
   for (const { name, load } of optionalAdapters) {

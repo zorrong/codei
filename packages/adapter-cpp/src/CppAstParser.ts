@@ -6,7 +6,7 @@
 
 import * as fs from "fs"
 import * as path from "path"
-import type { RawSymbol, ParsedFile } from "@codei/core"
+import type { RawSymbol, ParsedFile } from "@pnftrading/codei-core"
 
 const CPP_KEYWORDS = new Set([
   "alignas", "alignof", "and", "and_eq", "asm", "auto", "bitand", "bitor", "bool", "break",

@@ -5,7 +5,7 @@
 
 import * as fs from "fs"
 import * as path from "path"
-import type { RawSymbol, ParsedFile } from "@codei/core"
+import type { RawSymbol, ParsedFile } from "@pnftrading/codei-core"
 
 const JAVA_KEYWORDS = new Set([
   "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "checked",

@@ -6,7 +6,7 @@
 import { Project, type SourceFile } from "ts-morph"
 import * as path from "path"
 import * as fs from "fs"
-import type { ParsedFile } from "@codei/core"
+import type { ParsedFile } from "@pnftrading/codei-core"
 import { SymbolExtractor } from "./SymbolExtractor.js"
 import { DependencyResolver } from "./DependencyResolver.js"
 

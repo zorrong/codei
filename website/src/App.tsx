@@ -342,8 +342,8 @@ function App() {
               <h3>Install</h3>
               <div className="install-code">
                 <Terminal size={16} />
-                <code>npm install -g @codeindex/cli</code>
-                <button onClick={() => navigator.clipboard.writeText('npm install -g @codeindex/cli')}>
+                <code>npm install -g @pnftrading/codei</code>
+                <button onClick={() => navigator.clipboard.writeText('npm install -g @pnftrading/codei')}>
                   Copy
                 </button>
               </div>

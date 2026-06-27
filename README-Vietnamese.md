@@ -4,7 +4,7 @@
 
 Thay vì dump toàn bộ codebase vào prompt (50k+ tokens), `codei` build một hierarchical tree index và dùng LLM reasoning để tìm đúng context — giảm từ **50,000+ token xuống còn ~1,000-3,000 token** per query.
 
-> Ghi chú thương hiệu: `codei` là tên mới của `Codeindex`. Chữ `i` mang hai ý nghĩa: `index` và `intelligent`. Lệnh CLI là `codei`, gói npm để cài CLI là `@codei/cli`, còn core/adapters vẫn giữ dưới `@codei/*`.
+> Ghi chú thương hiệu: `codei` là tên mới của `Codeindex`. Chữ `i` mang hai ý nghĩa: `index` và `intelligent`. Lệnh CLI là `codei`, gói npm để cài CLI là `@pnftrading/codei`, còn core/adapters được publish dưới `@pnftrading/codei-*`.
 
 Inspired by [PageIndex](https://github.com/VectifyAI/PageIndex), adapted cho codebase TypeScript.
 
@@ -282,7 +282,7 @@ const DEFAULT_IGNORE = [
 Implement `LanguageAdapter` interface:
 
 ```typescript
-import type { LanguageAdapter } from "@codei/core"
+import type { LanguageAdapter } from "@pnftrading/codei-core"
 
 export class PythonAdapter implements LanguageAdapter {
   readonly language = "python"

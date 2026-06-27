@@ -1,4 +1,4 @@
-# @codei/adapter-python
+# @pnftrading/codei-adapter-python
 
 **Python language adapter for codei** — Parses Python source for symbols and imports.
 
@@ -10,12 +10,12 @@
 
 - Extracts top-level symbols for `codei`
 - Captures imports or module references when possible
-- Fits the standard `LanguageAdapter` interface used by `@codei/core`
+- Fits the standard `LanguageAdapter` interface used by `@pnftrading/codei-core`
 
 ## Usage
 
 ```typescript
-import { PythonAdapter } from "@codei/adapter-python"
+import { PythonAdapter } from "@pnftrading/codei-adapter-python"
 
 const adapter = new PythonAdapter()
 ```

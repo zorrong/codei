@@ -2,7 +2,7 @@
  * JavaAdapter — implement LanguageAdapter for Java.
  */
 
-import type { LanguageAdapter, ParsedFile } from "@codei/core"
+import type { LanguageAdapter, ParsedFile } from "@pnftrading/codei-core"
 import * as path from "path"
 import { JavaAstParser } from "./JavaAstParser.js"
 import { JavaDependencyResolver } from "./JavaDependencyResolver.js"

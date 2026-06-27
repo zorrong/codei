@@ -1,5 +1,5 @@
 {
-  "name": "@codei/adapter-cpp",
+  "name": "@pnftrading/codei-adapter-cpp",
   "version": "0.1.0",
   "description": "C/C++ language adapter using regex-based extraction",
   "type": "module",
@@ -16,7 +16,7 @@
     "test": "echo 'adapter-cpp: no tests yet'"
   },
   "dependencies": {
-    "@codei/core": "workspace:*"
+    "@pnftrading/codei-core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

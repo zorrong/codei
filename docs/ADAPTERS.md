@@ -24,21 +24,21 @@ interface LanguageAdapter {
 
 | Adapter | Language | File Extensions | Parser |
 |---------|----------|-----------------|--------|
-| `@codei/adapter-typescript` | TypeScript | `.ts`, `.tsx` | ts-morph |
-| `@codei/adapter-python` | Python | `.py` | Regex |
-| `@codei/adapter-go` | Go | `.go` | Regex |
-| `@codei/adapter-rust` | Rust | `.rs` | Regex |
-| `@codei/adapter-java` | Java | `.java` | Regex |
-| `@codei/adapter-csharp` | C# | `.cs` | Regex |
-| `@codei/adapter-cpp` | C/C++ | `.cpp`, `.cc`, `.hpp`, `.h` | Regex |
-| `@codei/adapter-php` | PHP | `.php` | Regex |
-| `@codei/adapter-swift` | Swift | `.swift` | Regex |
+| `@pnftrading/codei-adapter-typescript` | TypeScript | `.ts`, `.tsx` | ts-morph |
+| `@pnftrading/codei-adapter-python` | Python | `.py` | Regex |
+| `@pnftrading/codei-adapter-go` | Go | `.go` | Regex |
+| `@pnftrading/codei-adapter-rust` | Rust | `.rs` | Regex |
+| `@pnftrading/codei-adapter-java` | Java | `.java` | Regex |
+| `@pnftrading/codei-adapter-csharp` | C# | `.cs` | Regex |
+| `@pnftrading/codei-adapter-cpp` | C/C++ | `.cpp`, `.cc`, `.hpp`, `.h` | Regex |
+| `@pnftrading/codei-adapter-php` | PHP | `.php` | Regex |
+| `@pnftrading/codei-adapter-swift` | Swift | `.swift` | Regex |
 
 ---
 
 ## TypeScript Adapter
 
-**Package**: `@codei/adapter-typescript`
+**Package**: `@pnftrading/codei-adapter-typescript`
 **Parser**: ts-morph (full AST)
 
 ### Features
@@ -54,7 +54,7 @@ interface LanguageAdapter {
 
 ## Python Adapter
 
-**Package**: `@codei/adapter-python`
+**Package**: `@pnftrading/codei-adapter-python`
 **Parser**: Regex-based
 
 ### Features
@@ -77,7 +77,7 @@ from collections import defaultdict as dd
 
 ## Go Adapter
 
-**Package**: `@codei/adapter-go`
+**Package**: `@pnftrading/codei-adapter-go`
 **Parser**: Regex-based
 
 ### Features
@@ -102,7 +102,7 @@ import (
 
 ## Rust Adapter
 
-**Package**: `@codei/adapter-rust`
+**Package**: `@pnftrading/codei-adapter-rust`
 **Parser**: Regex-based
 
 ### Features
@@ -124,7 +124,7 @@ use crate::module::Item;
 
 ## Java Adapter
 
-**Package**: `@codei/adapter-java`
+**Package**: `@pnftrading/codei-adapter-java`
 **Parser**: Regex-based
 
 ### Features
@@ -146,7 +146,7 @@ import com.example.MyClass;
 
 ## C# Adapter
 
-**Package**: `@codei/adapter-csharp`
+**Package**: `@pnftrading/codei-adapter-csharp`
 **Parser**: Regex-based
 
 ### Features
@@ -169,7 +169,7 @@ using MyNamespace.MyClass;
 
 ## C++ Adapter
 
-**Package**: `@codei/adapter-cpp`
+**Package**: `@pnftrading/codei-adapter-cpp`
 **Parser**: Regex-based
 
 ### Features
@@ -191,7 +191,7 @@ using MyNamespace.MyClass;
 
 ## PHP Adapter
 
-**Package**: `@codei/adapter-php`
+**Package**: `@pnftrading/codei-adapter-php`
 **Parser**: Regex-based
 
 ### Features
@@ -213,7 +213,7 @@ use App\Models\User;
 
 ## Swift Adapter
 
-**Package**: `@codei/adapter-swift`
+**Package**: `@pnftrading/codei-adapter-swift`
 **Parser**: Regex-based
 
 ### Features
@@ -246,7 +246,7 @@ mkdir -p packages/adapter-newlang/src
 
 ```json
 {
-  "name": "@codei/adapter-newlang",
+  "name": "@pnftrading/codei-adapter-newlang",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -261,7 +261,7 @@ mkdir -p packages/adapter-newlang/src
     "build": "tsc"
   },
   "dependencies": {
-    "@codei/core": "workspace:*"
+    "@pnftrading/codei-core": "workspace:*"
   }
 }
 ```
@@ -270,7 +270,7 @@ mkdir -p packages/adapter-newlang/src
 
 ```typescript
 // src/NewlangAdapter.ts
-import type { LanguageAdapter, ParsedFile } from "@codei/core"
+import type { LanguageAdapter, ParsedFile } from "@pnftrading/codei-core"
 
 export class NewlangAdapter implements LanguageAdapter {
   readonly language = "newlang" as const
