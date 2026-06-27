@@ -17,15 +17,18 @@ npm install -g pnftrading_codei
 # Setup once globally
 codei setup
 
-# Index your project
+# Initialize your project and generate AI agent rules
 cd your-project
+codei init --agent all
+
+# Build the index
 codei index .
 
 # Query!
 codei query "How does authentication work?"
 ```
 
-The package installs both command aliases: `codei` and `codeindex`.
+The package installs both command aliases: `codei` and `codeindex`. `codei init --agent all` creates project rule files for Codex, Claude Code, Cursor, Windsurf, and Antigravity-style IDEs without overwriting existing files.
 
 ## Commands
 
@@ -33,6 +36,7 @@ The package installs both command aliases: `codei` and `codeindex`.
 |---------|-------------|
 | `codei setup` | Global runtime configuration (recommended) |
 | `codei init [path]` | Initialize project |
+| `codei init --agent all` | Initialize project and generate AI agent rule files |
 | `codei index [path]` | Build/rebuild index |
 | `codei query "<text>"` | Query the index |
 | `codei update [path]` | Incremental update |

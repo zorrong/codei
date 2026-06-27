@@ -25,7 +25,7 @@ codeindex --help
 From the project root:
 
 ```bash
-codei init --yes
+codei init --agent all
 codei index .
 ```
 
@@ -37,9 +37,19 @@ codei query "What does this project do? Where are the main modules?"
 
 If the answer looks useful, your IDE or agent can use `codei` for context.
 
-## 3. Simplest Setup for Any IDE: Add AGENTS.md
+## 3. Simplest Setup for Any IDE: Generate Agent Rules
 
-Create `AGENTS.md` in the project root:
+`codei init --agent all` creates these files when they do not already exist:
+
+- `AGENTS.md` for Codex and generic terminal agents
+- `CLAUDE.md` for Claude Code
+- `.cursorrules` for Cursor
+- `.windsurfrules` for Windsurf
+- `.antigravity/rules.md` for Antigravity-style IDEs
+
+Use `--agent codex`, `--agent claude`, `--agent cursor`, `--agent windsurf`, or `--agent antigravity` to generate only one target. You can also pass comma-separated targets, for example `--agent codex,claude`.
+
+If you want to write the rule manually, create `AGENTS.md` in the project root:
 
 ````markdown
 # Agent instructions
@@ -62,7 +72,7 @@ codei update
 ```
 ````
 
-This works well for Codex and any agent that reads project-level instruction files. If your IDE does not read `AGENTS.md`, copy the same content into its custom instructions or project rules.
+The generated `AGENTS.md` works well for Codex and any agent that reads project-level instruction files. If your IDE does not read `AGENTS.md`, copy the same content into its custom instructions or project rules.
 
 ## 4. Direct Prompt Pattern
 
@@ -202,7 +212,7 @@ codei update .
 First time in a project:
 
 ```bash
-codei init --yes
+codei init --agent all
 codei index .
 ```
 
