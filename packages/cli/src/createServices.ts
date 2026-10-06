@@ -102,5 +102,6 @@ export async function createIndexManager(
     verbose: config.verbose,
     ...(config.projectName !== undefined && { projectName: config.projectName }),
     ...(config.summaryMode !== undefined && { summaryMode: config.summaryMode }),
+    ...(config.ignore !== undefined && { ignoreDirs: config.ignore }),
   })
 }

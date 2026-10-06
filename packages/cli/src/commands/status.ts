@@ -9,6 +9,14 @@ import { type CodeiConfig, loadConfig } from "../config.js"
 import { createIndexManager, createNoopLLMClient } from "../createServices.js"
 import { FileSystemIndexStore, TraversalCache } from "pnftrading_codei-core"
 
+/** Logic exit cho --fail-if-stale (tách để test được). */
+export function shouldFailStale(
+  status: { exists: boolean; isStale: boolean },
+  failIfStale: boolean
+): boolean {
+  return failIfStale === true && status.exists && status.isStale
+}
+
 export function registerStatusCommand(program: Command): void {
   program
     .command("status [path]")
@@ -16,6 +24,7 @@ export function registerStatusCommand(program: Command): void {
     .option("--index-dir <dir>", "Index directory")
     .option("--json", "Output as JSON")
     .option("--clear-cache", "Clear traversal cache for this project")
+    .option("--fail-if-stale", "Exit 2 khi index cũ (dùng cho CI)")
     .action(async (targetPath: string | undefined, options: Record<string, string | boolean>) => {
       const projectRoot = path.resolve(targetPath ?? ".")
 
@@ -66,6 +75,9 @@ export function registerStatusCommand(program: Command): void {
               },
             },
           }, null, 2))
+          if (shouldFailStale(status, options["failIfStale"] === true)) {
+            process.exit(2)
+          }
           return
         }
 
@@ -100,6 +112,11 @@ export function registerStatusCommand(program: Command): void {
             console.log(`   ... and ${status.staleFiles.length - 10} more`)
           }
           console.log(`\n   Run: codei update`)
+        }
+
+        if (shouldFailStale(status, options["failIfStale"] === true)) {
+          console.error(`\n❌ Index is stale`)
+          process.exit(2)
         }
       } catch (err) {
         console.error(`\n❌ Status check failed: ${(err as Error).message}`)

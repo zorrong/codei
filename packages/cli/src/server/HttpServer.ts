@@ -16,6 +16,7 @@ import { FileSystemIndexStore, Retriever, SymbolDependencyGraph, TraversalCache 
 import type { IndexTree, LLMClient } from "pnftrading_codei-core"
 import type { CodeiConfig } from "../config.js"
 import { createIndexManager } from "../createServices.js"
+import { logQuery } from "../telemetry.js"
 
 export interface HttpServerOptions {
   port?: number
@@ -186,6 +187,14 @@ export class HttpServer {
       })
 
       const result = await retriever.retrieve(tree, { query })
+      logQuery(this.projectRoot, this.config.indexDir, {
+        ts: Date.now(),
+        query,
+        estimatedTokens: result.estimatedTokens,
+        ...(result.rawTokens !== undefined && { rawTokens: result.rawTokens }),
+        ...(result.savedPct !== undefined && { savedPct: result.savedPct }),
+        files: result.files.map((f) => f.node.filePath),
+      })
 
       this.sendJson(res, 200, {
         query: result.query,

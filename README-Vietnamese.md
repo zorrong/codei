@@ -133,7 +133,8 @@ codei init [path]          # Setup config file cho project mới (--agent all, -
 codei index [path]         # Full rebuild index dự án
 codei query "<text>"       # Query và lấy code context
 codei update [path]        # Update index (sau git commit)
-codei status [path]        # Kiểm tra sức khỏe index (--json, --clear-cache)
+codei status [path]        # Kiểm tra sức khỏe index (--json, --clear-cache, --fail-if-stale)
+codei stats [path]         # Báo cáo token đã dùng / tiết kiệm
 codei serve [path]         # Start HTTP server cho IDE integration
 codei mcp                  # Start MCP server (stdio) cho AI agent
 ```
@@ -150,8 +151,14 @@ codei query "payment logic" --max-tokens 2000
 # Không expand dependencies
 codei query "UserService" --no-deps
 
+# Query theo đường dẫn file — trả thẳng file, khỏi suy luận
+codei query src/auth/auth.service.ts
+
 # Chế độ gọn: bỏ dòng trống + comment để giảm token
 codei query "payment logic" --compact
+
+# Xem lịch sử tiết kiệm token
+codei stats .
 
 # Verbose — xem traversal path, % token tiết kiệm, cache status
 codei query "how login works" -v

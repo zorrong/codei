@@ -171,6 +171,7 @@ Project-level configuration. Recommended: keep this file minimal and put API/pro
 ```json
 {
   "indexDir": ".index",
+  "ignore": ["tests", "fixtures"],
   "projectName": "my-project",
   "summaryMode": "heuristic",
   "serverApiKey": "optional-api-key",
@@ -184,9 +185,11 @@ Project-level configuration. Recommended: keep this file minimal and put API/pro
 
 | Mode | Behavior | LLM calls during index |
 |------|----------|------------------------|
-| `heuristic` | Build summaries locally from symbols/imports/exports | 0 |
+| `heuristic` | Build summaries locally from symbols/imports/exports + first doc comment | 0 |
 | `llm` | Use LLM to generate summaries | High |
 | `auto` | Heuristic-first, may use LLM in future versions | Low |
+
+`ignore` adds directory/file names to skip during scan (on top of defaults + `.gitignore`). Useful to exclude `tests` or `fixtures` from the index.
 
 Recommended default: `heuristic` (stable and avoids provider rate limits).
 
@@ -393,6 +396,20 @@ Check index health.
 
 ```bash
 codei status [path]
+```
+
+| Option | Description |
+|--------|-------------|
+| `--json` | Output as JSON |
+| `--clear-cache` | Clear traversal cache |
+| `--fail-if-stale` | Exit 2 when index is stale (for CI) |
+
+### `codei stats`
+
+Token usage report from local query history (`<indexDir>/query-log.jsonl`).
+
+```bash
+codei stats [path] [--json] [--last 20]
 ```
 
 ### `codei serve`

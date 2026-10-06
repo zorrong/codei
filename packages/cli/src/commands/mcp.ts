@@ -19,6 +19,7 @@ import {
 } from "pnftrading_codei-core"
 import type { IndexTree, LLMClient } from "pnftrading_codei-core"
 import type { CodeiConfig } from "../config.js"
+import { logQuery } from "../telemetry.js"
 
 export interface CodeiMcpDeps {
   projectRoot: string
@@ -95,6 +96,14 @@ export function createCodeiMcpServer(deps: CodeiMcpDeps): McpServer {
             },
           })
           const result = await retriever.retrieve(tree, { query })
+          logQuery(projectRoot, config.indexDir, {
+            ts: Date.now(),
+            query,
+            estimatedTokens: result.estimatedTokens,
+            ...(result.rawTokens !== undefined && { rawTokens: result.rawTokens }),
+            ...(result.savedPct !== undefined && { savedPct: result.savedPct }),
+            files: result.files.map((f) => f.node.filePath),
+          })
           const footer = `\n\n// tokens: ~${result.estimatedTokens} (saved ${result.savedPct ?? 0}%) | files: ${result.files.map((f) => f.node.filePath).join(", ")}`
           return { content: [{ type: "text" as const, text: result.formattedContext + footer }] }
         }

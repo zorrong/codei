@@ -22,6 +22,7 @@ export interface IndexManagerOptions {
   llmClient: LLMClient
   adapters: LanguageAdapter[]
   indexDir?: string
+  ignoreDirs?: string[]
   verbose?: boolean
   summaryMode?: SummaryMode
 }
@@ -75,6 +76,7 @@ export class IndexManager {
     this.scanner = new FileScanner({
       projectRoot: options.projectRoot,
       extensions: this.getSupportedExtensions(),
+      ...(options.ignoreDirs !== undefined && { ignoreDirs: options.ignoreDirs }),
     })
     this.builder = new TreeBuilder({
       projectRoot: options.projectRoot,

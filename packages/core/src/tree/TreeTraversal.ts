@@ -46,6 +46,11 @@ export class TreeTraversal {
     const selectedFiles: FileNode[] = []
     const selectedSymbols: SymbolNode[] = []
 
+    const directFileResult = this.tryDirectFileTraversal(tree, query, path)
+    if (directFileResult) {
+      return directFileResult
+    }
+
     const directSymbolResult = await this.tryDirectSymbolTraversal(tree, query, path)
     if (directSymbolResult) {
       return directSymbolResult
@@ -207,6 +212,48 @@ export class TreeTraversal {
         title: n!.title,
         summary: n!.shortSummary,
       }))
+  }
+
+  /**
+   * Mục 2: query trùng path file (vd `codei query src/auth/x.ts`) thì trả thẳng
+   * file đó, khỏi gọi LLM. Khớp path đầy đủ trước, basename duy nhất sau.
+   */
+  private tryDirectFileTraversal(
+    tree: IndexTree,
+    query: string,
+    path: string[]
+  ): TraversalResult | null {
+    const norm = query.trim().replace(/^["']|["']$/g, "").replace(/\\/g, "/").replace(/^\.\//, "")
+    if (!norm || !/[/.]/.test(norm)) return null
+
+    const files = Object.values(tree.nodes).filter(
+      (n): n is FileNode => n?.level === "file"
+    )
+    if (files.length === 0) return null
+
+    let match = files.find((f) => f.filePath === norm)
+      ?? files.find((f) => norm.endsWith(`/${f.filePath}`))
+
+    if (!match) {
+      const base = norm.split("/").pop() ?? ""
+      if (!base.includes(".")) return null
+      const byBase = files.filter((f) => f.filePath.split("/").pop() === base)
+      if (byBase.length !== 1 || !byBase[0]) return null
+      match = byBase[0]
+    }
+
+    const selectedFiles = [match]
+    const selectedSymbols = match.children
+      .map((id) => tree.nodes[id])
+      .filter((n): n is SymbolNode => n?.level === "symbol")
+      .slice(0, this.options.maxSymbols)
+    if (selectedSymbols.length === 0) return null
+
+    const symbolScores: Record<string, number> = {}
+    for (const s of selectedSymbols) symbolScores[s.nodeId] = 1
+
+    path.push(`direct-file: [${match.nodeId}]`)
+    return { selectedFiles, selectedSymbols, path, symbolScores }
   }
 
   private async tryDirectSymbolTraversal(

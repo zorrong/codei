@@ -108,7 +108,12 @@ Respond with ONLY a JSON object in this exact format, no markdown:
     const exported = file.symbols.filter((s) => s.isExported).map((s) => s.name)
     const top = (exported.length > 0 ? exported : file.symbols.map((s) => s.name)).slice(0, 5)
     const suffix = top.length > 0 ? ` (${top.join(", ")})` : ""
-    return `${file.relativePath} — ${file.language} file with ${file.symbols.length} symbols${suffix}`
+    // Mục 1: lấy doc comment đầu tiên để summary heuristic có nghĩa hơn
+    const doc = file.symbols
+      .map((s) => s.docComment?.split("\n")[0]?.trim().replace(/^[/\*#\s]+/, ""))
+      .find((d) => d && d.length > 0)
+    const docSuffix = doc ? ` — ${doc.slice(0, 120)}` : ""
+    return `${file.relativePath} — ${file.language} file with ${file.symbols.length} symbols${suffix}${docSuffix}`
   }
 
   private heuristicDetailedSummary(file: ParsedFile): string {

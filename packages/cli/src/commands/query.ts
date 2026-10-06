@@ -7,6 +7,7 @@ import * as path from "path"
 import { loadConfig } from "../config.js"
 import { createLLMClient, createIndexManager, createNoopLLMClient } from "../createServices.js"
 import { FileSystemIndexStore, Retriever, TraversalCache } from "pnftrading_codei-core"
+import { logQuery } from "../telemetry.js"
 
 type VerboseCacheStatus = "exact" | "similar" | "miss"
 
@@ -70,11 +71,22 @@ export function registerQueryCommand(program: Command): void {
           },
         })
 
+        const startedAt = Date.now()
         const { result, cacheStatus } = await retrieveWithVerboseCacheStatus(retriever, cache, tree, {
           query: queryText,
           maxOutputTokens: parseInt(options["maxTokens"] as string ?? "4000"),
           expandDeps: options["deps"] !== false,
           compact: options["compact"] === true,
+        })
+        logQuery(projectRoot, config.indexDir, {
+          ts: Date.now(),
+          query: queryText,
+          estimatedTokens: result.estimatedTokens,
+          ...(result.rawTokens !== undefined && { rawTokens: result.rawTokens }),
+          ...(result.savedPct !== undefined && { savedPct: result.savedPct }),
+          files: result.files.map((f) => f.node.filePath),
+          cache: cacheStatus,
+          latencyMs: Date.now() - startedAt,
         })
 
         const format = options["format"] as string ?? "text"

@@ -24,6 +24,8 @@ export interface CodeiConfig {
   baseURL?: string
   /** Output dir cho index files */
   indexDir: string
+  /** Thêm thư mục/file bỏ qua khi scan (cộng với mặc định + .gitignore) */
+  ignore?: string[]
   /** Project name hiển thị trong index */
   projectName?: string
   summaryMode?: "llm" | "heuristic" | "auto"
@@ -57,6 +59,7 @@ const DOTENV_FILE = ".env"
 const DEFAULT_GLOBAL_CONFIG_DIR = path.join(os.homedir(), ".codei")
 const PROJECT_LOCAL_CONFIG_KEYS: Array<keyof CodeiConfig> = [
   "indexDir",
+  "ignore",
   "projectName",
   "summaryMode",
   "verbose",
