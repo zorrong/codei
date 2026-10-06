@@ -6,7 +6,7 @@ Thay vì dump toàn bộ codebase vào prompt (50k+ tokens), `codei` build một
 
 > Ghi chú thương hiệu: `codei` là tên mới của `Codeindex`. Chữ `i` mang hai ý nghĩa: `index` và `intelligent`. Lệnh CLI là `codei`, gói npm để cài CLI là `pnftrading_codei`, còn core/adapters được publish dưới `pnftrading_codei-*`.
 > npm package: https://www.npmjs.com/package/pnftrading_codei
-> Bản npm hiện tại: `pnftrading_codei@0.1.2`
+> Bản npm hiện tại: `pnftrading_codei@0.1.3`
 
 Inspired by [PageIndex](https://github.com/VectifyAI/PageIndex), adapted cho codebase TypeScript.
 
@@ -129,18 +129,19 @@ class UserService
 
 ```bash
 codei setup                # Cấu hình API Key/Provider toàn cục
-codei init [path]          # Setup config file cho project mới
+codei init [path]          # Setup config file cho project mới (--agent all, --mcp)
 codei index [path]         # Full rebuild index dự án
 codei query "<text>"       # Query và lấy code context
 codei update [path]        # Update index (sau git commit)
-codei status [path]        # Kiểm tra sức khỏe index
-codei serve [path]         # Start server cho IDE integration
+codei status [path]        # Kiểm tra sức khỏe index (--json, --clear-cache)
+codei serve [path]         # Start HTTP server cho IDE integration
+codei mcp                  # Start MCP server (stdio) cho AI agent
 ```
 
 ### Options hay dùng
 
 ```bash
-# Query với output dạng JSON
+# Query với output dạng JSON (kèm rawTokens, savedPct)
 codei query "auth flow" --format json
 
 # Giới hạn token output
@@ -149,12 +150,33 @@ codei query "payment logic" --max-tokens 2000
 # Không expand dependencies
 codei query "UserService" --no-deps
 
-# Verbose — xem LLM traversal path
+# Chế độ gọn: bỏ dòng trống + comment để giảm token
+codei query "payment logic" --compact
+
+# Verbose — xem traversal path, % token tiết kiệm, cache status
 codei query "how login works" -v
 
 # Serve trên port khác
 codei serve . --port 4000
 ```
+
+### Tiết kiệm token: đo được, không đoán
+
+Mỗi query báo 2 con số: `estimatedTokens` (context trả về) và `savedPct`
+(% tiết kiệm so với dump toàn bộ các file được chọn):
+
+```bash
+codei query "how does auth work?" --format json
+# { "estimatedTokens": 1943, "rawTokens": 7665, "savedPct": 75, ... }
+```
+
+Cách `codei` giảm token:
+
+- Chỉ expand dependency nào **thật sự được gọi tên** trong code đã chọn.
+- Quá giới hạn token thì **bỏ nguyên symbol** (ưu tiên điểm thấp trước),
+  không bao giờ cắt ngang giữa hàm.
+- Symbol lớn (>400 tokens): class chỉ in signature + danh sách method.
+- Mỗi lần hỏi LLM chỉ gửi tối đa 30 lựa chọn, prompt rút gọn.
 
 ---
 
@@ -186,6 +208,18 @@ codei query "<câu hỏi cụ thể cho task>"
 Dùng output của codei làm context chính. Sau khi sửa code, chạy `codei update`.
 ```
 
+### MCP server (khuyên dùng cho Claude Code / Cursor / Windsurf)
+
+Thay vì chạy shell, agent gọi `codei` như một tool — ít token, ít lỗi parse:
+
+```bash
+codei mcp --cwd /path/to/project
+# In config để paste vào client: codei init --mcp
+```
+
+Tools: `codei_query`, `codei_update`, `codei_status`.
+Chi tiết: [docs/MCP.md](./docs/MCP.md) (tiếng Anh).
+
 ---
 
 ## Các API Endpoints
@@ -195,8 +229,8 @@ Server (mặc định: `localhost:3131`) cung cấp các endpoint:
 | Method | Path | Mô tả |
 |---|---|---|
 | `GET` | `/health` | Kiểm tra tình trạng server |
-| `POST` | `/query` | Truy vấn context code (Xem body mẫu trong `HttpServer.ts`) |
-| `POST` | `/update` | Kích hoạt cập nhật index tăng trưởng |
+| `POST` | `/query` | Truy vấn context code (`query`, `maxTokens`, `maxSymbols`, `expandDeps`, `compact`; trả về `context`, `estimatedTokens`, `rawTokens`, `savedPct`) |
+| `POST` | `/update` | Kích hoạt cập nhật index tăng trưởng (chỉ xoá cache liên quan file đổi, trả về `cacheInvalidated`) |
 | `GET` | `/status` | Xem thống kê index hiện tại |
 
 ## Cấu trúc project
@@ -210,10 +244,19 @@ codei/
 │   │   ├── src/llm/             # SummaryGenerator, TraversalReasoner
 │   │   └── src/storage/         # FileSystemIndexStore, IndexManager, FileScanner
 │   ├── adapter-typescript/      # TypeScript parser (ts-morph)
-│   └── cli/                     # CLI commands + HTTP server
+│   ├── adapter-python/          # Python parser
+│   ├── adapter-go/              # Go parser
+│   ├── adapter-java/            # Java parser
+│   ├── adapter-rust/            # Rust parser
+│   ├── adapter-php/             # PHP parser
+│   ├── adapter-csharp/          # C# parser
+│   ├── adapter-cpp/             # C++ parser
+│   ├── adapter-swift/           # Swift parser
+│   └── cli/                     # CLI commands + HTTP server + MCP server
 └── .index/                      # Generated index (gitignored)
     ├── tree.json
-    └── meta.json
+    ├── meta.json
+    └── traversal-cache.json     # Cache query → node ID (không lưu source code)
 ```
 
 ---
@@ -253,9 +296,13 @@ const DEFAULT_IGNORE = [
 
 ---
 
-## Thêm ngôn ngữ mới (Phase 6)
+## Ngôn ngữ hỗ trợ
 
-Implement `LanguageAdapter` interface:
+TypeScript • Python • Go • Rust • Java • C# • C++ • PHP • Swift — mỗi ngôn ngữ
+một adapter riêng (`packages/adapter-*`). Relative path trong index luôn dùng
+forward slash (`src/auth/...`) trên mọi hệ điều hành.
+
+Muốn thêm ngôn ngữ mới, implement `LanguageAdapter` interface:
 
 ```typescript
 import type { LanguageAdapter } from "pnftrading_codei-core"
