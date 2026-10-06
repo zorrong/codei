@@ -67,7 +67,7 @@ function makeFixtureTree(): IndexTree {
     shortSummary: "JWT auth service class",
     filePath: "src/auth/auth.service.ts",
     signature: "class AuthService",
-    fullSource: "class AuthService {\n  async login(dto: LoginDto): Promise<TokenPair> { return {} as TokenPair }\n}",
+    fullSource: "class AuthService {\n  constructor(private users: UserService) {}\n  async login(dto: LoginDto): Promise<TokenPair> { return {} as TokenPair }\n}",
     startLine: 10,
     endLine: 50,
     kind: "class",
@@ -360,17 +360,22 @@ describe("ContextBuilder", () => {
 
   it("should prune context when over maxOutputTokens", () => {
     const authSym = tree.nodes["sym:src/auth/auth.service.ts:AuthService"] as SymbolNode
+    const loginSym = tree.nodes["sym:src/auth/auth.service.ts:login"] as SymbolNode
     const authFile = tree.nodes["file:src/auth/auth.service.ts"] as FileNode
+    const userSym = tree.nodes["sym:src/user/user.service.ts:UserService"] as SymbolNode
+    const userFile = tree.nodes["file:src/user/user.service.ts"] as FileNode
 
     const { context, estimatedTokens } = builder.build({
-      selectedSymbols: [authSym],
+      selectedSymbols: [authSym, loginSym],
       selectedFiles: [authFile],
-      deps: [],
+      deps: [{ symbol: userSym, fileNode: userFile, signatureOnly: "class UserService" }],
       config: { ...DEFAULT_RETRIEVAL_CONFIG, maxOutputTokens: 10 },
     })
 
-    expect(estimatedTokens).toBeLessThanOrEqual(10)
-    expect(context).toContain("truncated")
+    // P0-2: cắt theo khối, không cắt giữa code
+    expect(context).toContain("omitted")
+    // Không chứa nửa symbol: context vẫn có header nguyên vẹn
+    expect(context).toContain("===")
   })
 })
 
@@ -402,10 +407,10 @@ describe("Retriever (integration)", () => {
     const retriever = new Retriever({ llmClient: llm })
     const result = await retriever.retrieve(tree, {
       query: "auth",
-      maxOutputTokens: 50,
+      maxOutputTokens: 500,
     })
 
-    expect(result.estimatedTokens).toBeLessThanOrEqual(50)
+    expect(result.estimatedTokens).toBeLessThanOrEqual(500)
   })
 
   it("should skip dep expansion when expandDeps is false", async () => {

@@ -6,6 +6,7 @@ import * as fs from "fs"
 import * as path from "path"
 import { execSync } from "child_process"
 import { createRequire } from "module"
+import { relativePosix } from "./paths.js"
 
 interface IgnoreInstance {
   add(patterns: string | IgnoreInstance | readonly string[]): this
@@ -72,7 +73,7 @@ export class FileScanner {
   scan(indexedHashMap: Record<string, string>): ScanResult {
     const allFiles = this.walkDirectory(this.options.projectRoot)
     const allRelative = new Set(
-      allFiles.map((f) => path.relative(this.options.projectRoot, f))
+      allFiles.map((f) => relativePosix(this.options.projectRoot, f))
     )
 
     const changedFiles: string[] = []
@@ -93,7 +94,7 @@ export class FileScanner {
     }
 
     for (const absPath of allFiles) {
-      const relPath = path.relative(this.options.projectRoot, absPath)
+      const relPath = relativePosix(this.options.projectRoot, absPath)
       if (!(relPath in indexedHashMap)) {
         newFiles.push(absPath)
       }
@@ -130,7 +131,7 @@ export class FileScanner {
    */
   getFileHash(absPath: string): string {
     try {
-      const relPath = path.relative(this.options.projectRoot, absPath)
+      const relPath = relativePosix(this.options.projectRoot, absPath)
       return execSync(`git hash-object "${relPath}"`, {
         cwd: this.options.projectRoot,
         encoding: "utf-8",
@@ -152,7 +153,7 @@ export class FileScanner {
   buildHashMap(files: string[]): Record<string, string> {
     const map: Record<string, string> = {}
     for (const absPath of files) {
-      const relPath = path.relative(this.options.projectRoot, absPath)
+      const relPath = relativePosix(this.options.projectRoot, absPath)
       map[relPath] = this.getFileHash(absPath)
     }
     return map
@@ -170,7 +171,7 @@ export class FileScanner {
 
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name)
-      const relPath = path.relative(this.options.projectRoot, fullPath)
+      const relPath = relativePosix(this.options.projectRoot, fullPath)
 
       if (this.options.ignoreDirs.includes(entry.name)) continue
       if (this.ig.ignores(relPath)) continue

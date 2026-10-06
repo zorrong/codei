@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest"
 import { FileScanner } from "../src/storage/FileScanner.js"
+import { relativePosix } from "../src/storage/paths.js"
 import { IndexManager } from "../src/storage/IndexManager.js"
 import type { LLMClient, LLMResponse } from "../src/types/LLMClient.js"
 import type { LanguageAdapter } from "../src/types/LanguageAdapter.js"
@@ -33,7 +34,7 @@ function makeMockAdapter(projectRoot: string): LanguageAdapter {
     supports: (f) => f.endsWith(".ts") || f.endsWith(".tsx"),
     async resolveImport() { return null },
     async parseFile(filePath: string): Promise<ParsedFile> {
-      const relPath = path.relative(projectRoot, filePath)
+      const relPath = relativePosix(projectRoot, filePath)
       const content = fsSync.readFileSync(filePath, "utf-8")
       const hasClass = content.includes("class ")
       const className = hasClass
@@ -87,7 +88,7 @@ describe("FileScanner", () => {
     })
 
     const result = scanner.scan({})
-    const relPaths = result.allFiles.map((f) => path.relative(tmpDir, f))
+    const relPaths = result.allFiles.map((f) => relativePosix(tmpDir, f))
 
     expect(relPaths).toContain("src/auth.ts")
     expect(relPaths).toContain("src/utils.ts")

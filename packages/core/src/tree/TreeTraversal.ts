@@ -23,6 +23,8 @@ export interface TraversalResult {
   selectedSymbols: SymbolNode[]
   /** Breadcrumb path LLM đã traverse */
   path: string[]
+  /** P2-14: điểm relevance 0-1 theo symbol nodeId */
+  symbolScores?: Record<string, number> | undefined
 }
 
 export class TreeTraversal {
@@ -177,6 +179,8 @@ export class TreeTraversal {
         const symNode = tree.nodes[symId]
         if (symNode?.level === "symbol") selectedSymbols.push(symNode as SymbolNode)
       }
+
+      return { selectedFiles, selectedSymbols, path, symbolScores: symbolDecision.scores }
     }
 
     return { selectedFiles, selectedSymbols, path }
@@ -255,7 +259,7 @@ export class TreeTraversal {
     }
 
     path.push(`direct-symbols: [${decision.selectedIds.join(", ")}]`)
-    return { selectedFiles, selectedSymbols, path }
+    return { selectedFiles, selectedSymbols, path, symbolScores: decision.scores }
   }
 
   private isDirectSymbolQuery(query: string): boolean {

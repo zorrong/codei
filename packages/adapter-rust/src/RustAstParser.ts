@@ -5,6 +5,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import type { RawSymbol, ParsedFile } from "pnftrading_codei-core"
+import { relativePosix } from "pnftrading_codei-core"
 
 const RUST_PRELUDE = new Set([
   "Option", "Result", "Vec", "Box", "String", "str", "usize", "u8", "u16", "u32", "u64", "u128",
@@ -48,7 +49,7 @@ export class RustAstParser {
 
     return {
       filePath,
-      relativePath: path.relative(this.projectRoot, filePath),
+      relativePath: relativePosix(this.projectRoot, filePath),
       language: "rust",
       symbols,
       internalImports,

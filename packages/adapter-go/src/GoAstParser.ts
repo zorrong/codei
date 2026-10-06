@@ -6,6 +6,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import type { RawSymbol, ParsedFile } from "pnftrading_codei-core"
+import { relativePosix } from "pnftrading_codei-core"
 
 const GO_STDLIB = new Set([
   "fmt", "os", "io", "bufio", "bytes", "strings", "strconv", "errors",
@@ -57,7 +58,7 @@ export class GoAstParser {
 
     return {
       filePath,
-      relativePath: path.relative(this.projectRoot, filePath),
+      relativePath: relativePosix(this.projectRoot, filePath),
       language: "go",
       symbols,
       internalImports,

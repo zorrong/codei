@@ -5,6 +5,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import type { RawSymbol, ParsedFile } from "pnftrading_codei-core"
+import { relativePosix } from "pnftrading_codei-core"
 
 const PYTHON_STDLIB = new Set([
   "sys", "os", "re", "json", "math", "time", "datetime", "collections",
@@ -47,7 +48,7 @@ export class PythonAstParser {
 
     return {
       filePath,
-      relativePath: path.relative(this.projectRoot, filePath),
+      relativePath: relativePosix(this.projectRoot, filePath),
       language: "python",
       symbols,
       internalImports,

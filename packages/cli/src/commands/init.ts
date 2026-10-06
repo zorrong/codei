@@ -126,6 +126,7 @@ export function registerInitCommand(program: Command): void {
       "--agent <target>",
       "Generate AI agent rules: codex|claude|cursor|windsurf|antigravity|all"
     )
+    .option("--mcp", "In cấu hình MCP server cho Claude Code / Cursor")
     .action(async (targetPath: string | undefined, options: Record<string, string | boolean>) => {
       const projectRoot = path.resolve(targetPath ?? ".")
       const configPath = path.join(projectRoot, ".codei.json")
@@ -213,5 +214,15 @@ export function registerInitCommand(program: Command): void {
         console.log(`   3. Query the index : codei query "how does auth work?"`)
       }
       console.log(`\n   Hoặc start IDE server: codei serve .`)
+
+      if (options["mcp"] === true) {
+        const mcpConfig = {
+          mcpServers: {
+            codei: { command: "codei", args: ["mcp", "--cwd", projectRoot] },
+          },
+        }
+        console.log(`\n🔌 MCP config (Claude Code / Cursor):`)
+        console.log(JSON.stringify(mcpConfig, null, 2))
+      }
     })
 }

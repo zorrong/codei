@@ -6,6 +6,36 @@ import type { Command } from "commander"
 import * as path from "path"
 import { type CodeiConfig, loadConfig } from "../config.js"
 import { createIndexManager, createLLMClient, createNoopLLMClient } from "../createServices.js"
+import { FileSystemIndexStore, SymbolDependencyGraph, TraversalCache } from "pnftrading_codei-core"
+
+/** P2-15: sau update chỉ xoá cache chạm tới file đổi, không xoá toàn bộ. */
+export async function invalidateCacheForUpdate(
+  projectRoot: string,
+  indexDir: string,
+  updatedFiles: string[],
+  upToDate: boolean,
+  getTree: () => Promise<import("pnftrading_codei-core").IndexTree | null>,
+  cache?: TraversalCache
+): Promise<number> {
+  const traversalCache =
+    cache ??
+    new TraversalCache({
+      persistencePath: path.join(projectRoot, indexDir, "traversal-cache.json"),
+    })
+  if (!upToDate && updatedFiles.length === 0) {
+    // Full rebuild mà không rõ file đổi → xoá toàn bộ cho an toàn
+    traversalCache.invalidate()
+    traversalCache.flushSync()
+    return -1
+  }
+  if (updatedFiles.length === 0) return 0
+  const tree = await getTree()
+  if (!tree) return 0
+  const graph = new SymbolDependencyGraph(tree)
+  const removed = traversalCache.invalidateByIds(graph.getInvalidationIds(updatedFiles))
+  traversalCache.flushSync()
+  return removed
+}
 
 export function registerUpdateCommand(program: Command): void {
   program
@@ -33,10 +63,19 @@ export function registerUpdateCommand(program: Command): void {
         if (result.upToDate) {
           console.log("✅ Index is up to date — no changes detected")
         } else {
+          const store = new FileSystemIndexStore(projectRoot, config.indexDir)
+          const removed = await invalidateCacheForUpdate(
+            projectRoot,
+            config.indexDir,
+            result.updatedFiles,
+            result.upToDate,
+            () => store.loadTree()
+          )
           console.log("✅ Index updated!")
           if (result.filesUpdated > 0) console.log(`   Modified : ${result.filesUpdated} files`)
           if (result.filesNew > 0)     console.log(`   New      : ${result.filesNew} files`)
           if (result.filesDeleted > 0) console.log(`   Deleted  : ${result.filesDeleted} files`)
+          if (removed >= 0) console.log(`   Cache    : invalidated ${removed} entries`)
           console.log(`   Duration : ${(result.durationMs / 1000).toFixed(1)}s`)
         }
       } catch (err) {

@@ -36,6 +36,25 @@ export class SymbolDependencyGraph {
     return this.getReferencingSymbols(filePath)
   }
 
+  /**
+   * P2-15: tập nodeId cần vô hiệu cache khi các file đổi.
+   * Gồm file nodeIds, symbols trong file đổi, và symbols tham chiếu tới file đổi.
+   */
+  getInvalidationIds(changedFiles: string[]): Set<string> {
+    const ids = new Set<string>()
+    for (const filePath of changedFiles) {
+      ids.add(`file:${filePath}`)
+      const fileNode = this.tree.nodes[`file:${filePath}`]
+      if (fileNode?.level === "file") {
+        for (const childId of fileNode.children) ids.add(childId)
+      }
+      for (const sym of this.getImpactedByFileChange(filePath)) {
+        ids.add(sym.nodeId)
+      }
+    }
+    return ids
+  }
+
   getCircularFileDeps(): string[][] {
     const visited = new Set<string>()
     const stack = new Set<string>()

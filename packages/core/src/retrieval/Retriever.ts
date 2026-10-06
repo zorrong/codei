@@ -3,7 +3,7 @@
  * Flow: TreeTraversal → DependencyExpander → ContextBuilder
  */
 
-import type { IndexTree } from "../types/TreeNode.js"
+import type { IndexTree, FileNode, SymbolNode } from "../types/TreeNode.js"
 import type { RetrievalQuery, RetrievalResult, RetrievalConfig } from "../types/Retrieval.js"
 import type { LLMClient } from "../types/LLMClient.js"
 import { DEFAULT_RETRIEVAL_CONFIG } from "../types/Retrieval.js"
@@ -39,49 +39,37 @@ export class Retriever {
       ...(query.maxSymbols !== undefined && { maxSymbols: query.maxSymbols }),
       ...(query.expandDeps !== undefined && { expandDeps: query.expandDeps }),
       ...(query.maxOutputTokens !== undefined && { maxOutputTokens: query.maxOutputTokens }),
+      ...(query.compact !== undefined && { compact: query.compact }),
     }
 
-    const cached = this.cache?.get(query.query) ?? this.cache?.findSimilar(query.query)
-    if (cached) {
-      const selectedSymbolIds = new Set(cached.selectedSymbols.map((s) => s.nodeId))
-      const deps = config.expandDeps
-        ? this.depExpander.expand(tree, cached.selectedSymbols, selectedSymbolIds)
-        : []
+    const cached = this.cache?.get(query.query, tree) ?? this.cache?.findSimilar(query.query, tree)
+    let selectedFiles: FileNode[]
+    let selectedSymbols: SymbolNode[]
+    let path: string[]
+    let symbolScores: Record<string, number> | undefined
+    let reasoning: string
 
-      const { context, estimatedTokens } = this.contextBuilder.build({
-        selectedSymbols: cached.selectedSymbols,
-        selectedFiles: cached.selectedFiles,
-        deps,
-        config,
+    if (cached) {
+      selectedFiles = cached.selectedFiles
+      selectedSymbols = cached.selectedSymbols
+      path = cached.path
+      symbolScores = cached.symbolScores
+      reasoning = "Cached traversal result"
+    } else {
+      const traversal = new TreeTraversal({
+        llmClient: this.llmClient,
+        maxSymbols: config.maxSymbols,
       })
 
-      return {
-        query: query.query,
-        files: cached.selectedFiles.map((fileNode) => ({
-          node: fileNode,
-          symbols: cached.selectedSymbols
-            .filter((s) => s.filePath === fileNode.filePath)
-            .map((s) => ({
-              node: s,
-              relevanceScore: 1.0,
-              reasoning: "Cached traversal result",
-              role: "direct" as const,
-            })),
-        })),
-        formattedContext: context,
-        estimatedTokens,
-        traversalPath: cached.path,
-      }
+      const result = await traversal.traverse(tree, query.query)
+      selectedFiles = result.selectedFiles
+      selectedSymbols = result.selectedSymbols
+      path = result.path
+      symbolScores = result.symbolScores
+      reasoning = "Selected by LLM traversal"
+
+      this.cache?.set(query.query, { selectedFiles, selectedSymbols, path, symbolScores })
     }
-
-    const traversal = new TreeTraversal({
-      llmClient: this.llmClient,
-      maxSymbols: config.maxSymbols,
-    })
-
-    const { selectedFiles, selectedSymbols, path } = await traversal.traverse(tree, query.query)
-
-    this.cache?.set(query.query, { selectedFiles, selectedSymbols, path })
 
     // Step 2: Expand 1-hop dependencies
     const selectedSymbolIds = new Set(selectedSymbols.map((s) => s.nodeId))
@@ -95,7 +83,11 @@ export class Retriever {
       selectedFiles,
       deps,
       config,
+      ...(symbolScores !== undefined && { symbolScores }),
     })
+
+    // P2-12: ước lượng token nếu dump toàn bộ file được chọn
+    const rawTokens = this.estimateRawTokens(tree, selectedFiles)
 
     return {
       query: query.query,
@@ -105,14 +97,27 @@ export class Retriever {
           .filter((s) => s.filePath === fileNode.filePath)
           .map((s) => ({
             node: s,
-            relevanceScore: 1.0,
-            reasoning: "Selected by LLM traversal",
+            relevanceScore: symbolScores?.[s.nodeId] ?? 1.0,
+            reasoning,
             role: "direct" as const,
           })),
       })),
       formattedContext: context,
       estimatedTokens,
       traversalPath: path,
+      rawTokens,
+      savedPct: rawTokens > 0 ? Math.max(0, Math.min(100, Math.round((1 - estimatedTokens / rawTokens) * 100))) : 0,
     }
+  }
+
+  private estimateRawTokens(tree: IndexTree, files: FileNode[]): number {
+    let chars = 0
+    for (const file of files) {
+      for (const symId of file.children) {
+        const node = tree.nodes[symId]
+        if (node?.level === "symbol") chars += (node as SymbolNode).fullSource.length
+      }
+    }
+    return Math.ceil(chars / 4)
   }
 }

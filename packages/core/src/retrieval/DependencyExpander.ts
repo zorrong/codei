@@ -26,6 +26,7 @@ export class DependencyExpander {
   ): ExpandedDep[] {
     const deps: ExpandedDep[] = []
     const seen = new Set<string>()
+    const combinedSource = selectedSymbols.map((s) => s.fullSource).join("\n")
 
     for (const symbol of selectedSymbols) {
       for (const depFilePath of symbol.internalRefs) {
@@ -41,6 +42,8 @@ export class DependencyExpander {
           const depSym = tree.nodes[depSymId]
           if (depSym?.level !== "symbol") continue
           if (!depSym.isExported) continue  // chỉ include exported symbols
+          // P0-1: chỉ giữ dep có tên được dùng trong source đã chọn
+          if (!this.isReferenced(depSym.title, combinedSource)) continue
 
           seen.add(depSymId)
           deps.push({
@@ -53,5 +56,15 @@ export class DependencyExpander {
     }
 
     return deps
+  }
+
+  private isReferenced(name: string, source: string): boolean {
+    if (!name) return false
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    try {
+      return new RegExp(`\\b${escaped}\\b`).test(source)
+    } catch {
+      return source.includes(name)
+    }
   }
 }

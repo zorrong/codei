@@ -14,6 +14,7 @@ import * as fs from "fs/promises"
 import * as fsSync from "fs"
 import * as path from "path"
 import { execSync } from "child_process"
+import { relativePosix } from "./paths.js"
 
 export class FileSystemIndexStore implements IndexStore {
   private readonly indexDir: string
@@ -183,7 +184,7 @@ export class FileSystemIndexStore implements IndexStore {
   /** Lấy git hash của một file cụ thể */
   static getFileGitHash(filePath: string, projectRoot: string): string {
     try {
-      const relPath = path.relative(projectRoot, filePath)
+      const relPath = relativePosix(projectRoot, filePath)
       const hash = execSync(`git hash-object "${relPath}"`, {
         cwd: projectRoot,
         encoding: "utf-8",

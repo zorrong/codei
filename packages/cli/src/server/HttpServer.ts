@@ -11,8 +11,9 @@
 
 import * as http from "http"
 import * as path from "path"
-import { FileSystemIndexStore, Retriever, TraversalCache } from "pnftrading_codei-core"
-import type { LLMClient } from "pnftrading_codei-core"
+import * as fsSync from "fs"
+import { FileSystemIndexStore, Retriever, SymbolDependencyGraph, TraversalCache } from "pnftrading_codei-core"
+import type { IndexTree, LLMClient } from "pnftrading_codei-core"
 import type { CodeiConfig } from "../config.js"
 import { createIndexManager } from "../createServices.js"
 
@@ -37,6 +38,8 @@ export class HttpServer {
   private readonly maxBodyBytes: number
   private readonly rateLimitPerMinute: number
   private readonly rateLimit: Map<string, { resetAt: number; count: number }> = new Map()
+  private cachedTree: IndexTree | null = null
+  private cachedTreeMtimeMs = 0
 
   constructor(options: HttpServerOptions) {
     this.port = options.port ?? 3131
@@ -143,11 +146,12 @@ export class HttpServer {
         return
       }
 
-      const { query, maxTokens, expandDeps, maxSymbols } = parsed.value as {
+      const { query, maxTokens, expandDeps, maxSymbols, compact } = parsed.value as {
         query: string
         maxTokens?: number
         expandDeps?: boolean
         maxSymbols?: number
+        compact?: boolean
       }
 
       if (!query || typeof query !== "string") {
@@ -156,7 +160,7 @@ export class HttpServer {
       }
 
       const store = new FileSystemIndexStore(this.projectRoot, this.config.indexDir)
-      const tree = await store.loadTree()
+      const tree = await this.loadTreeCached(store)
 
       if (!tree) {
         this.sendJson(res, 404, {
@@ -177,6 +181,7 @@ export class HttpServer {
           expandDeps: expandDeps ?? true,
           maxSymbols: maxSymbols ?? 10,
           depSymbolsIncludeBody: false,
+          compact: compact ?? false,
         },
       })
 
@@ -186,6 +191,8 @@ export class HttpServer {
         query: result.query,
         context: result.formattedContext,
         estimatedTokens: result.estimatedTokens,
+        rawTokens: result.rawTokens,
+        savedPct: result.savedPct,
         traversalPath: result.traversalPath,
         files: result.files.map((f) => ({
           path: f.node.filePath,
@@ -199,12 +206,25 @@ export class HttpServer {
     if (req.method === "POST" && url.pathname === "/update") {
       const manager = await createIndexManager(this.projectRoot, this.config, this.llmClient)
       const result = await manager.update()
+      this.cachedTree = null
+      this.cachedTreeMtimeMs = 0
+      // P2-15: chỉ xoá cache liên quan file đổi
+      let cacheInvalidated = 0
+      if (!result.upToDate) {
+        if (result.updatedFiles.length === 0) {
+          this.traversalCache.invalidate()
+        } else {
+          const graph = new SymbolDependencyGraph(result.tree)
+          cacheInvalidated = this.traversalCache.invalidateByIds(graph.getInvalidationIds(result.updatedFiles))
+        }
+      }
       this.sendJson(res, 200, {
         upToDate: result.upToDate,
         filesUpdated: result.filesUpdated,
         filesNew: result.filesNew,
         filesDeleted: result.filesDeleted,
         durationMs: result.durationMs,
+        cacheInvalidated,
       })
       return
     }
@@ -268,6 +288,12 @@ export class HttpServer {
     const ip = this.getClientIp(req)
     const now = Date.now()
     const windowMs = 60_000
+    // P1-10: dọn entries hết hạn để không rò rỉ bộ nhớ
+    if (this.rateLimit.size > 1000) {
+      for (const [key, entry] of this.rateLimit) {
+        if (entry.resetAt <= now) this.rateLimit.delete(key)
+      }
+    }
     const entry = this.rateLimit.get(ip)
     if (!entry || entry.resetAt <= now) {
       this.rateLimit.set(ip, { resetAt: now + windowMs, count: 1 })
@@ -285,6 +311,34 @@ export class HttpServer {
 
   private randomId(): string {
     return Math.random().toString(16).slice(2) + Date.now().toString(16)
+  }
+
+  /** P1-6: giữ tree trong RAM, chỉ đọc lại khi mtime đổi. */
+  private async loadTreeCached(store: FileSystemIndexStore): Promise<IndexTree | null> {
+    const treePath = path.join(this.projectRoot, this.config.indexDir, "tree.json")
+    try {
+      const stat = fsSync.statSync(treePath)
+      if (this.cachedTree && stat.mtimeMs === this.cachedTreeMtimeMs) {
+        return this.cachedTree
+      }
+      const tree = await store.loadTree()
+      if (tree) {
+        this.cachedTree = tree
+        this.cachedTreeMtimeMs = stat.mtimeMs
+      }
+      return tree
+    } catch {
+      const tree = await store.loadTree()
+      if (tree) {
+        this.cachedTree = tree
+        try {
+          this.cachedTreeMtimeMs = fsSync.statSync(treePath).mtimeMs
+        } catch {
+          this.cachedTreeMtimeMs = 0
+        }
+      }
+      return tree
+    }
   }
 
   private log(data: Record<string, unknown>): void {

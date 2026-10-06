@@ -14,7 +14,10 @@ export interface NodeCandidate {
 export interface TraversalDecision {
   selectedIds: string[]
   reasoning: string
+  scores?: Record<string, number> | undefined
 }
+
+export const MAX_LLM_CANDIDATES = 30
 
 export class TraversalReasoner {
   constructor(private readonly llm: LLMClient) {}
@@ -31,7 +34,7 @@ export class TraversalReasoner {
     maxSelect = 5
   ): Promise<TraversalDecision> {
     if (candidates.length === 0) {
-      return { selectedIds: [], reasoning: "No candidates available" }
+      return { selectedIds: [], reasoning: "No candidates available", scores: {} }
     }
 
     // Nếu chỉ có 1 candidate thì chọn luôn, không cần LLM
@@ -39,75 +42,70 @@ export class TraversalReasoner {
       return {
         selectedIds: [candidates[0].nodeId],
         reasoning: "Only one candidate available",
+        scores: { [candidates[0].nodeId]: 1 },
       }
     }
 
     const heuristic = this.selectByHeuristic(query, candidates, maxSelect)
-    if (heuristic) return { selectedIds: heuristic, reasoning: "Heuristic selection" }
+    if (heuristic) return { selectedIds: heuristic, reasoning: "Heuristic selection", scores: this.normalizeScores(query, candidates, heuristic) }
 
     const heuristicFallback = this.selectFallback(query, candidates, maxSelect)
 
-    const candidateList = candidates
-      .map((c) => `[${c.nodeId}] ${c.title}: ${c.summary}`)
+    // P0-3: giới hạn candidate gửi LLM để tránh prompt phình trên repo lớn
+    let llmCandidates = candidates
+    if (candidates.length > MAX_LLM_CANDIDATES) {
+      llmCandidates = this.topCandidates(query, candidates, MAX_LLM_CANDIDATES)
+    }
+
+    const candidateList = llmCandidates
+      .map((c) => `[${c.nodeId}] ${c.title}: ${this.truncateSummary(c.summary)}`)
       .join("\n")
 
-    const prompt = `You are an expert developer navigating a codebase index (Project -> Module -> File -> Symbol).
-Your goal is to select the most relevant nodes for the given query to provide context for answering.
-
-Query: "${query}"
-
-Guidelines:
-1. The query might be in a language other than English (e.g., Vietnamese). Translate or interpret the technical intent accurately.
-2. Favor files or symbols that contain implementation logic (e.g., "engines", "services", "logic", "calculations") if the query asks for "how" something works, "logic", or "implementation".
-3. Consider synonyms and related technical concepts (e.g., "tính toán" -> "calculation/compute", "đảo chiều" -> "reversal").
-
-Available ${level}s:
-${candidateList}
-
-Select up to ${maxSelect} most relevant ${level}s.
-Respond with ONLY a JSON object, no markdown:
-{
-  "selected": ["nodeId1", "nodeId2"],
-  "reasoning": "brief explanation in English of why these were selected"
-}`
+    // P0-5: prompt rút gọn (~40 tokens cố định)
+    const prompt = `Pick up to ${maxSelect} ${level}s relevant to the query (query may be non-English).\nQuery: "${query}"\n${candidateList}\nReply JSON only: {"s":["id",...]}`
 
 
     try {
       const response = await this.llm.complete({
         messages: [{ role: "user", content: prompt }],
-        maxTokens: 200,
+        maxTokens: 100,
         temperature: 0.0,
         requestLabel: `traverse:${level}`,
       })
 
-      return this.parseDecision(response.content, candidates)
+      return this.parseDecision(response.content, llmCandidates, query)
     } catch {
       return {
         selectedIds: heuristicFallback,
         reasoning: "LLM failed, using heuristic fallback",
+        scores: this.normalizeScores(query, candidates, heuristicFallback),
       }
     }
   }
 
   private parseDecision(
     content: string,
-    candidates: NodeCandidate[]
+    candidates: NodeCandidate[],
+    query?: string
   ): TraversalDecision {
     try {
       const cleaned = content.replace(/```json|```/g, "").trim()
       const parsed = JSON.parse(cleaned) as {
         selected?: string[]
+        s?: string[]
         reasoning?: string
       }
 
       const validIds = new Set(candidates.map((c) => c.nodeId))
-      const selectedIds = (parsed.selected ?? []).filter((id) =>
+      const rawSelected = parsed.s ?? parsed.selected ?? []
+      const selectedIds = rawSelected.filter((id) =>
         validIds.has(id)
       )
 
       return {
         selectedIds,
-        reasoning: parsed.reasoning ?? "",
+        reasoning: parsed.reasoning ?? "llm",
+        scores: query !== undefined ? this.normalizeScores(query, candidates, selectedIds) : undefined,
       }
     } catch {
       // Fallback: chọn candidate đầu tiên
@@ -245,6 +243,50 @@ Respond with ONLY a JSON object, no markdown:
       .split(/\s+/)
       .map((part) => part.trim())
       .filter((part) => part.length >= 3)
+  }
+
+  private truncateSummary(summary: string, maxChars = 120): string {
+    if (summary.length <= maxChars) return summary
+    return summary.slice(0, maxChars)
+  }
+
+  private topCandidates(query: string, candidates: NodeCandidate[], limit: number): NodeCandidate[] {
+    const scored = this.scoreCandidates(query, candidates)
+    const byId = new Map(candidates.map((c) => [c.nodeId, c]))
+    const ranked = scored
+      .filter((s) => s.score > 0)
+      .slice(0, limit)
+      .map((s) => byId.get(s.id))
+      .filter((c): c is NodeCandidate => Boolean(c))
+    if (ranked.length >= limit) return ranked
+    // Lấp chỗ trống theo thứ tự gốc để không mất candidate
+    const seen = new Set(ranked.map((c) => c.nodeId))
+    for (const c of candidates) {
+      if (ranked.length >= limit) break
+      if (!seen.has(c.nodeId)) {
+        ranked.push(c)
+        seen.add(c.nodeId)
+      }
+    }
+    return ranked
+  }
+
+  /** P2-14: chuẩn hoá điểm heuristic về 0-1 cho selected ids. */
+  private normalizeScores(query: string, candidates: NodeCandidate[], selectedIds: string[]): Record<string, number> {
+    const scored = this.scoreCandidates(query, candidates)
+    const maxScore = Math.max(0, ...scored.map((s) => s.score))
+    const byId = new Map(scored.map((s) => [s.id, s.score]))
+    const out: Record<string, number> = {}
+    for (const id of selectedIds) {
+      const raw = byId.get(id) ?? 0
+      if (maxScore > 0 && raw > 0) {
+        out[id] = Math.round((raw / maxScore) * 100) / 100
+      } else {
+        // LLM chọn nhưng heuristic 0 điểm → 0.5
+        out[id] = 0.5
+      }
+    }
+    return out
   }
 
   private compact(text: string): string {

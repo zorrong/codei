@@ -20,6 +20,7 @@ import { registerServeCommand } from "./commands/serve.js"
 import { registerInitCommand } from "./commands/init.js"
 import { registerSetupCommand } from "./commands/setup.js"
 import { registerDoctorCommand } from "./commands/doctor.js"
+import { registerMcpCommand } from "./commands/mcp.js"
 
 const program = new Command()
 
@@ -39,5 +40,6 @@ registerUpdateCommand(program)
 registerStatusCommand(program)
 registerServeCommand(program)
 registerDoctorCommand(program)
+registerMcpCommand(program)
 
 program.parse()

@@ -7,6 +7,7 @@ import { Project, type SourceFile } from "ts-morph"
 import * as path from "path"
 import * as fs from "fs"
 import type { ParsedFile } from "pnftrading_codei-core"
+import { relativePosix } from "pnftrading_codei-core"
 import { SymbolExtractor } from "./SymbolExtractor.js"
 import { DependencyResolver } from "./DependencyResolver.js"
 
@@ -62,7 +63,7 @@ export class TsMorphParser {
    */
   async parseFile(filePath: string): Promise<ParsedFile> {
     const absolutePath = path.resolve(filePath)
-    const relativePath = path.relative(this.projectRoot, absolutePath)
+    const relativePath = relativePosix(this.projectRoot, absolutePath)
 
     // Add file vào project (hoặc lấy nếu đã có)
     let sourceFile: SourceFile
@@ -97,7 +98,7 @@ export class TsMorphParser {
       )
       if (resolved === null) continue
 
-      const from = path.relative(this.projectRoot, resolved)
+      const from = relativePosix(this.projectRoot, resolved)
       const defaultImport = importDecl.getDefaultImport()?.getText()
       const namespaceImport = importDecl.getNamespaceImport()?.getText()
       const namedImports = importDecl.getNamedImports().map((n) => n.getName())
@@ -119,7 +120,7 @@ export class TsMorphParser {
       symbols,
       importBindings,
       internalImports: internal.map((p) =>
-        path.relative(this.projectRoot, p)
+        relativePosix(this.projectRoot, p)
       ),
       externalImports: external,
       exports,

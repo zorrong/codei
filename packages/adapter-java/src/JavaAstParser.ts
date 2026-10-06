@@ -6,6 +6,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import type { RawSymbol, ParsedFile } from "pnftrading_codei-core"
+import { relativePosix } from "pnftrading_codei-core"
 
 const JAVA_KEYWORDS = new Set([
   "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char", "checked",
@@ -53,7 +54,7 @@ export class JavaAstParser {
 
     return {
       filePath,
-      relativePath: path.relative(this.projectRoot, filePath),
+      relativePath: relativePosix(this.projectRoot, filePath),
       language: "java",
       symbols,
       internalImports,

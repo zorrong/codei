@@ -7,6 +7,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import type { RawSymbol, ParsedFile } from "pnftrading_codei-core"
+import { relativePosix } from "pnftrading_codei-core"
 
 const CPP_KEYWORDS = new Set([
   "alignas", "alignof", "and", "and_eq", "asm", "auto", "bitand", "bitor", "bool", "break",
@@ -60,7 +61,7 @@ export class CppAstParser {
 
     return {
       filePath,
-      relativePath: path.relative(this.projectRoot, filePath),
+      relativePath: relativePosix(this.projectRoot, filePath),
       language: "cpp",
       symbols,
       internalImports,

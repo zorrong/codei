@@ -6,6 +6,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import type { RawSymbol, ParsedFile } from "pnftrading_codei-core"
+import { relativePosix } from "pnftrading_codei-core"
 
 const CSHARP_KEYWORDS = new Set([
   "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked",
@@ -57,7 +58,7 @@ export class CSharpAstParser {
 
     return {
       filePath,
-      relativePath: path.relative(this.projectRoot, filePath),
+      relativePath: relativePosix(this.projectRoot, filePath),
       language: "csharp",
       symbols,
       internalImports,

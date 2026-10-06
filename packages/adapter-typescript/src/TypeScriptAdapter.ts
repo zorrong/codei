@@ -4,6 +4,7 @@
  */
 
 import type { LanguageAdapter, ParsedFile, SupportedLanguage } from "pnftrading_codei-core"
+import { relativePosix } from "pnftrading_codei-core"
 import * as path from "path"
 import { TsMorphParser } from "./TsMorphParser.js"
 import { DependencyResolver } from "./DependencyResolver.js"
@@ -47,7 +48,7 @@ export class TypeScriptAdapter implements LanguageAdapter {
       projectRoot
     )
     if (resolved === null) return null
-    return path.relative(projectRoot, resolved)
+    return relativePosix(projectRoot, resolved)
   }
 
   private getOrCreateParser(projectRoot: string): TsMorphParser {

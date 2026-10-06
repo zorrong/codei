@@ -27,6 +27,12 @@ export interface RetrievalQuery {
    * Default: 4000
    */
   maxOutputTokens?: number
+
+  /**
+   * Bỏ dòng trống + dòng chỉ chứa comment để giảm token.
+   * Default: false
+   */
+  compact?: boolean
 }
 
 export interface RetrievedSymbol {
@@ -62,6 +68,10 @@ export interface RetrievalResult {
   estimatedTokens: number
   /** Traversal path LLM đã đi qua — useful để debug */
   traversalPath: string[]
+  /** P2-12: tổng token nếu dump toàn bộ file được chọn (ước lượng) */
+  rawTokens?: number | undefined
+  /** P2-12: % token tiết kiệm so với dump toàn bộ (0-100) */
+  savedPct?: number | undefined
 }
 
 /**
@@ -73,6 +83,8 @@ export interface RetrievalConfig {
   maxOutputTokens: number
   /** Include full source hay chỉ signature cho dependency symbols */
   depSymbolsIncludeBody: boolean
+  /** P2-13: bỏ dòng trống + comment để giảm token */
+  compact: boolean
 }
 
 export const DEFAULT_RETRIEVAL_CONFIG: RetrievalConfig = {
@@ -80,4 +92,5 @@ export const DEFAULT_RETRIEVAL_CONFIG: RetrievalConfig = {
   expandDeps: true,
   maxOutputTokens: 4000,
   depSymbolsIncludeBody: false,
+  compact: false,
 }

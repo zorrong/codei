@@ -14,6 +14,7 @@ import { FileWatcher, type FileChange } from "./FileWatcher.js"
 import { ParallelSymbolExtractor } from "../retrieval/ParallelSymbolExtractor.js"
 import * as path from "path"
 import type { SummaryMode } from "../llm/SummaryGenerator.js"
+import { relativePosix } from "./paths.js"
 
 export interface IndexManagerOptions {
   projectRoot: string
@@ -39,6 +40,8 @@ export interface UpdateResult {
   filesNew: number
   durationMs: number
   upToDate: boolean
+  /** P2-15: relative paths đã đổi (modified + new + deleted) */
+  updatedFiles: string[]
 }
 
 export interface StatusResult {
@@ -144,6 +147,7 @@ export class IndexManager {
         filesNew: 0,
         durationMs: buildResult.durationMs,
         upToDate: false,
+        updatedFiles: [],
       }
     }
 
@@ -159,6 +163,7 @@ export class IndexManager {
         filesNew: 0,
         durationMs: Date.now() - start,
         upToDate: true,
+        updatedFiles: [],
       }
     }
 
@@ -189,7 +194,7 @@ export class IndexManager {
     // Update hash map
     const newHashMap = { ...meta.gitHashMap }
     for (const absPath of changedAndNew) {
-      const relPath = path.relative(this.options.projectRoot, absPath)
+      const relPath = relativePosix(this.options.projectRoot, absPath)
       newHashMap[relPath] = this.scanner.getFileHash(absPath)
     }
     for (const relPath of scan.deletedFiles) {
@@ -216,6 +221,10 @@ export class IndexManager {
       filesNew: scan.newFiles.length,
       durationMs: Date.now() - start,
       upToDate: false,
+      updatedFiles: [
+        ...changedAndNew.map((absPath) => relativePosix(this.options.projectRoot, absPath)),
+        ...scan.deletedFiles,
+      ],
     }
   }
 
@@ -235,8 +244,8 @@ export class IndexManager {
 
     const scan = this.scanner.scan(meta.gitHashMap)
     const staleFiles = [
-      ...scan.changedFiles.map((f) => path.relative(this.options.projectRoot, f)),
-      ...scan.newFiles.map((f) => path.relative(this.options.projectRoot, f)),
+      ...scan.changedFiles.map((f) => relativePosix(this.options.projectRoot, f)),
+      ...scan.newFiles.map((f) => relativePosix(this.options.projectRoot, f)),
       ...scan.deletedFiles,
     ]
 
@@ -274,7 +283,7 @@ export class IndexManager {
         if (changes.some((c) => c.type === "unlink")) {
           const deletedPaths = changes
             .filter((c) => c.type === "unlink")
-            .map((c) => path.relative(this.options.projectRoot, c.filePath))
+            .map((c) => relativePosix(this.options.projectRoot, c.filePath))
           await this.handleDeletedFiles(deletedPaths)
         }
         return
@@ -290,7 +299,7 @@ export class IndexManager {
 
           const deletedPaths = changes
             .filter((c) => c.type === "unlink")
-            .map((c) => path.relative(this.options.projectRoot, c.filePath))
+            .map((c) => relativePosix(this.options.projectRoot, c.filePath))
           if (deletedPaths.length > 0) {
             await this.handleDeletedFiles(deletedPaths)
           }
@@ -298,7 +307,7 @@ export class IndexManager {
           if (meta) {
             const newHashMap = { ...meta.gitHashMap }
             for (const absPath of filePaths) {
-              const relPath = path.relative(this.options.projectRoot, absPath)
+              const relPath = relativePosix(this.options.projectRoot, absPath)
               newHashMap[relPath] = this.scanner.getFileHash(absPath)
             }
             for (const relPath of deletedPaths) {

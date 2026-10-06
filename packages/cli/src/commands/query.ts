@@ -14,7 +14,7 @@ export async function retrieveWithVerboseCacheStatus(
   retriever: Pick<Retriever, "retrieve">,
   cache: Pick<TraversalCache, "peek">,
   tree: Awaited<ReturnType<FileSystemIndexStore["loadTree"]>>,
-  query: { query: string; maxOutputTokens: number; expandDeps: boolean }
+  query: { query: string; maxOutputTokens: number; expandDeps: boolean; compact?: boolean }
 ): Promise<{ result: Awaited<ReturnType<Retriever["retrieve"]>>; cacheStatus: VerboseCacheStatus }> {
   const cacheStatus = cache.peek(query.query)?.kind ?? "miss"
   const result = await retriever.retrieve(tree!, query)
@@ -30,6 +30,7 @@ export function registerQueryCommand(program: Command): void {
     .option("--no-deps", "Không expand dependencies")
     .option("--format <fmt>", "Output format: text | json", "text")
     .option("--max-symbols <n>", "Max symbols to include", "10")
+    .option("--compact", "Bỏ dòng trống + comment để giảm token")
     .option("--summary-mode <mode>", "Summary mode: heuristic | llm | auto")
     .option("-v, --verbose", "Show traversal path")
     .action(async (queryText: string, options: Record<string, string | boolean>) => {
@@ -65,6 +66,7 @@ export function registerQueryCommand(program: Command): void {
             expandDeps: options["deps"] !== false,
             maxSymbols: parseInt(options["maxSymbols"] as string ?? "10"),
             depSymbolsIncludeBody: false,
+            compact: options["compact"] === true,
           },
         })
 
@@ -72,6 +74,7 @@ export function registerQueryCommand(program: Command): void {
           query: queryText,
           maxOutputTokens: parseInt(options["maxTokens"] as string ?? "4000"),
           expandDeps: options["deps"] !== false,
+          compact: options["compact"] === true,
         })
 
         const format = options["format"] as string ?? "text"
@@ -80,6 +83,8 @@ export function registerQueryCommand(program: Command): void {
           console.log(JSON.stringify({
             query: result.query,
             estimatedTokens: result.estimatedTokens,
+            rawTokens: result.rawTokens,
+            savedPct: result.savedPct,
             traversalPath: result.traversalPath,
             files: result.files.map((f) => ({
               path: f.node.filePath,
@@ -92,7 +97,7 @@ export function registerQueryCommand(program: Command): void {
           if (options["verbose"] === true) {
             console.error(`[codei] Query: "${queryText}"`)
             console.error(`[codei] Traversal: ${result.traversalPath.join(" → ")}`)
-            console.error(`[codei] Tokens: ~${result.estimatedTokens}`)
+            console.error(`[codei] Tokens: ~${result.estimatedTokens} (saved ${result.savedPct ?? 0}%)`)
             console.error(`[codei] Cache: ${cacheStatus}`)
             console.error("---")
           }

@@ -6,6 +6,7 @@
 import * as fs from "fs"
 import * as path from "path"
 import type { RawSymbol, ParsedFile } from "pnftrading_codei-core"
+import { relativePosix } from "pnftrading_codei-core"
 
 const PHP_KEYWORDS = new Set([
   "abstract", "and", "array", "as", "break", "callable", "case", "catch", "class",
@@ -57,7 +58,7 @@ export class PhpAstParser {
 
     return {
       filePath,
-      relativePath: path.relative(this.projectRoot, filePath),
+      relativePath: relativePosix(this.projectRoot, filePath),
       language: "php",
       symbols,
       internalImports,
