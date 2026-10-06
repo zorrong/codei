@@ -40,7 +40,9 @@ Query the index for relevant context.
 {
   "query": "How does authentication work?",
   "maxTokens": 3000,
-  "maxSymbols": 10
+  "maxSymbols": 10,
+  "expandDeps": true,
+  "compact": false
 }
 ```
 
@@ -49,6 +51,8 @@ Query the index for relevant context.
 | `query` | string | required | Search query |
 | `maxTokens` | number | `3000` | Max tokens in response |
 | `maxSymbols` | number | `10` | Max symbols to include |
+| `expandDeps` | boolean | `true` | Include 1-hop dependency signatures (only deps actually referenced by name) |
+| `compact` | boolean | `false` | Strip blank lines + comment-only lines from source |
 
 **Response**
 
@@ -56,6 +60,8 @@ Query the index for relevant context.
 {
   "query": "How does authentication work?",
   "estimatedTokens": 1450,
+  "rawTokens": 5800,
+  "savedPct": 75,
   "traversalPath": ["root-descend [mod:src]", "modules: [mod:auth]", "selected: [file:src/auth/auth.service.ts]"],
   "files": [
     {
@@ -66,6 +72,8 @@ Query the index for relevant context.
   "context": "=== src/auth/auth.service.ts ===\nclass AuthService {\n  async login(credentials) { ... }\n}"
 }
 ```
+
+`rawTokens` estimates a full dump of the selected files; `savedPct` is the saving vs that dump. Context is pruned by whole symbols (never cut mid-symbol); oversized class symbols render as signature + member list with a `lines omitted` note.
 
 **With API Key**
 
@@ -102,9 +110,12 @@ Trigger an incremental index update.
   "filesUpdated": 3,
   "filesNew": 1,
   "filesDeleted": 0,
-  "durationMs": 2340
+  "durationMs": 2340,
+  "cacheInvalidated": 2
 }
 ```
+
+Only cache entries touching changed files are invalidated (`cacheInvalidated`); untouched queries stay cached. A full rebuild with unknown changed files clears the whole cache.
 
 **With API Key**
 
@@ -258,7 +269,7 @@ When indexing, `codei` writes:
 | `.index/tree.json` | Main tree index |
 | `.index/meta.json` | Metadata + git hash map |
 | `.index/summaries.json` | File summary cache (reused across index/update) |
-| `.index/traversal-cache.json` | Persistent traversal cache for query results |
+| `.index/traversal-cache.json` | Traversal cache: query → node IDs + scores only (no source code), 7-day TTL |
 
 ---
 
@@ -326,6 +337,11 @@ Initialize project in current directory.
 codei init [path]
 ```
 
+| Option | Description |
+|--------|-------------|
+| `--agent` | Generate AI agent rules (`codex\|claude\|cursor\|windsurf\|antigravity\|all`) |
+| `--mcp` | Print MCP server config for Claude Code / Cursor |
+
 ### `codei index`
 
 Build or rebuild index.
@@ -352,7 +368,12 @@ codei query "<text>" [options]
 | `--cwd` | Project directory |
 | `--format` | Output format (`text` or `json`) |
 | `--max-tokens` | Max tokens |
-| `--verbose` | Show traversal path |
+| `--max-symbols` | Max symbols to include |
+| `--no-deps` | Skip dependency expansion |
+| `--compact` | Strip blank lines + comment-only lines |
+| `--verbose` | Show traversal path, token savings, cache status |
+
+`--format json` includes `rawTokens` and `savedPct` alongside `estimatedTokens`.
 
 ### `codei update`
 
@@ -389,3 +410,13 @@ codei serve [path] [options]
 | `--api-key` | - | Require API key |
 | `--cors` | `*` | CORS origin |
 | `--rate-limit` | `120` | Rate limit |
+
+### `codei mcp`
+
+Start MCP server over stdio for agents (Claude Code, Cursor, Windsurf).
+
+```bash
+codei mcp --cwd /path/to/project
+```
+
+Tools: `codei_query`, `codei_update`, `codei_status`. See [docs/MCP.md](./MCP.md).
