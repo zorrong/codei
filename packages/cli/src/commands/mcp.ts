@@ -43,6 +43,8 @@ export function createCodeiMcpServer(deps: CodeiMcpDeps): McpServer {
       // P1-6: giữ tree trong RAM cho MCP (calls liên tiếp từ agent)
       let cachedTree: IndexTree | null = null
       let cachedMtimeMs = 0
+      // Vòng 3-4: symbol đã gửi trong session — query sau chỉ nhận dòng tham chiếu.
+      const sentSymbolIds = new Set<string>()
       async function loadTree(): Promise<IndexTree | null> {
         const treePath = path.join(projectRoot, config.indexDir, "tree.json")
         try {
@@ -75,8 +77,9 @@ export function createCodeiMcpServer(deps: CodeiMcpDeps): McpServer {
           maxTokens: z.number().int().min(100).max(16000).optional().describe("Max tokens cho context (default 4000)"),
           expandDeps: z.boolean().optional().describe("Có kèm dependency signatures không (default true)"),
           compact: z.boolean().optional().describe("Bỏ dòng trống + comment (default false)"),
+          fresh: z.boolean().optional().describe("Bỏ qua session dedup, gửi lại full source (default false)"),
         },
-        async ({ query, maxTokens, expandDeps, compact }) => {
+        async ({ query, maxTokens, expandDeps, compact, fresh }) => {
           const tree = await loadTree()
           if (!tree) {
             return {
@@ -93,9 +96,15 @@ export function createCodeiMcpServer(deps: CodeiMcpDeps): McpServer {
               maxSymbols: 10,
               depSymbolsIncludeBody: false,
               compact: compact ?? false,
+              // Vòng 3-4: symbol session đã có thì chỉ render tham chiếu
+              ...(fresh !== true &&
+                sentSymbolIds.size > 0 && { alreadySentNodeIds: [...sentSymbolIds] }),
             },
           })
           const result = await retriever.retrieve(tree, { query })
+          for (const f of result.files) {
+            for (const s of f.symbols) sentSymbolIds.add(s.node.nodeId)
+          }
           logQuery(projectRoot, config.indexDir, {
             ts: Date.now(),
             query,
@@ -118,6 +127,8 @@ export function createCodeiMcpServer(deps: CodeiMcpDeps): McpServer {
           const result = await manager.update()
           cachedTree = null
           cachedMtimeMs = 0
+          // Code đổi → line range trong tham chiếu session có thể lệch, gửi lại từ đầu
+          sentSymbolIds.clear()
           let cacheInvalidated = 0
           if (!result.upToDate) {
             if (result.updatedFiles.length === 0) {

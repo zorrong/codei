@@ -25,6 +25,7 @@ Hỏi index, trả về code context đã format dưới dạng text.
 | `maxTokens` | number | `4000` | Token tối đa cho context (100–16000) |
 | `expandDeps` | boolean | `true` | Có kèm signature của dependency không |
 | `compact` | boolean | `false` | Bỏ dòng trống + dòng chỉ có comment |
+| `fresh` | boolean | `false` | Bỏ qua dedup session, gửi lại full source |
 
 Cuối text có dòng footer:
 
@@ -33,6 +34,23 @@ Cuối text có dòng footer:
 ```
 
 `saved` = % tiết kiệm so với dump toàn bộ các file được chọn.
+
+Cách giảm token mỗi response:
+
+- Top-3 symbol theo điểm render full source, từ hạng 4 chỉ in signature.
+- Symbol điểm dưới 30% điểm cao nhất bị bỏ.
+- Symbol lồng nhau (method đã nằm trong class được chọn) không in 2 lần.
+- Không còn dòng summary cấp file — chỉ `=== path ===` + source.
+
+Dedup theo session: trong một session MCP, server nhớ symbol đã gửi.
+Hỏi trùng chỉ nhận 1 dòng tham chiếu thay vì source:
+
+```
+// AuthService — already sent (src/auth.ts:L10-L80)
+```
+
+Muốn gửi lại full thì truyền `fresh: true`. `codei_update` xoá trí nhớ
+session vì line range có thể đã lệch sau khi sửa code.
 
 ### `codei_update`
 

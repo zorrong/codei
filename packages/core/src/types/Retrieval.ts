@@ -85,6 +85,18 @@ export interface RetrievalConfig {
   depSymbolsIncludeBody: boolean
   /** P2-13: bỏ dòng trống + comment để giảm token */
   compact: boolean
+  /**
+   * Vòng 3-2: số symbol top-score được render full body, từ hạng này trở đi
+   * chỉ in signature. Default: 3.
+   */
+  fullBodyTopN?: number
+  /** Vòng 3-3: bỏ symbol có score < ratio * score cao nhất. Default: 0.3. */
+  scoreCutoffRatio?: number
+  /**
+   * Vòng 3-4: nodeId các symbol mà phía nhận đã có (session MCP) —
+   * chỉ render dòng tham chiếu, không gửi lại source.
+   */
+  alreadySentNodeIds?: string[]
 }
 
 export const DEFAULT_RETRIEVAL_CONFIG: RetrievalConfig = {

@@ -131,4 +131,28 @@ describe("MCP server", () => {
       .join("\n")
     expect(JSON.parse(text).upToDate).toBe(true)
   })
+
+  it("vòng 3-4: query lặp lại chỉ nhận tham chiếu, fresh:true gửi lại full", async () => {
+    const readText = (res: unknown) =>
+      (res as { content: Array<{ type: string; text: string }> }).content
+        .map((c) => c.text)
+        .join("\n")
+
+    await client.callTool({ name: "codei_query", arguments: { query: "AuthService login" } })
+    const second = readText(
+      await client.callTool({ name: "codei_query", arguments: { query: "AuthService login" } })
+    )
+    // AuthService đã gửi ở call trước → chỉ còn dòng tham chiếu
+    expect(second).toContain("already sent")
+    expect(second).not.toContain("login() { return true }")
+
+    const fresh = readText(
+      await client.callTool({
+        name: "codei_query",
+        arguments: { query: "AuthService login", fresh: true },
+      })
+    )
+    expect(fresh).toContain("login() { return true }")
+    expect(fresh).not.toContain("already sent")
+  })
 })

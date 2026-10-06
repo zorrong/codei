@@ -25,6 +25,7 @@ Query the index, returns formatted code context as text.
 | `maxTokens` | number | `4000` | Max context tokens (100–16000) |
 | `expandDeps` | boolean | `true` | Include dependency signatures |
 | `compact` | boolean | `false` | Strip blank lines + comment-only lines |
+| `fresh` | boolean | `false` | Skip session dedup, resend full source |
 
 The text ends with a footer line:
 
@@ -33,6 +34,23 @@ The text ends with a footer line:
 ```
 
 `saved` = context vs full dump of the selected files.
+
+Token saving per response:
+
+- Top-3 symbols by score render full source, the rest signature-only.
+- Symbols scoring below 30% of the top score are dropped.
+- Nested symbols (method inside an already-included class) are deduplicated.
+- No per-file summary line — just `=== path ===` plus symbol sources.
+
+Session dedup: within one MCP session the server remembers sent symbols.
+A repeat returns a one-line reference instead of the source:
+
+```
+// AuthService — already sent (src/auth.ts:L10-L80)
+```
+
+Pass `fresh: true` to resend full source. `codei_update` clears the
+session memory because line ranges may have shifted.
 
 ### `codei_update`
 

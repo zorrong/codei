@@ -18,34 +18,94 @@ export interface ContextInput {
 
 export const MAX_SYMBOL_TOKENS = 400
 
+/** Vòng 3-2: số symbol top-score được render full body, còn lại signature-only. */
+export const FULL_BODY_TOP_N = 3
+
+/** Vòng 3-3: bỏ symbol có score < 30% score cao nhất. */
+export const SCORE_CUTOFF_RATIO = 0.3
+
 export class ContextBuilder {
   /**
    * Build formatted context string.
    *
    * Format:
    * === src/auth/auth.service.ts ===
-   * // AuthService — Handles JWT auth...
    * class AuthService { ... }
    *
    * // --- Dependencies (signatures only) ---
    * // src/user/user.service.ts
    * class UserService { ... }
+   *
+   * Tiết kiệm token:
+   * - bỏ symbol điểm thấp (<30% max), symbol lồng nhau (method trong class),
+   * - top-3 score render full, còn lại chỉ signature,
+   * - symbol đã gửi (session MCP) chỉ còn dòng tham chiếu.
    */
   build(input: ContextInput): { context: string; estimatedTokens: number } {
     const scores = input.symbolScores ?? {}
+    const fullTopN = input.config.fullBodyTopN ?? FULL_BODY_TOP_N
+    const cutoffRatio = input.config.scoreCutoffRatio ?? SCORE_CUTOFF_RATIO
+    const alreadySent = new Set(input.config.alreadySentNodeIds ?? [])
+
     // P0-2: sort direct symbols theo score giảm dần, giữ thứ tự gốc khi bằng điểm
-    const sortedSymbols = input.selectedSymbols
+    const sorted = input.selectedSymbols
       .map((sym, index) => ({ sym, index, score: scores[sym.nodeId] ?? 1 }))
       .sort((a, b) => b.score - a.score || a.index - b.index)
-      .map((entry) => entry.sym)
 
-    const symbolBlocks = sortedSymbols.map((sym) => ({
-      nodeId: sym.nodeId,
-      filePath: sym.filePath,
-      score: scores[sym.nodeId] ?? 1,
-      text: this.renderSymbol(sym, input.config.compact),
-      tokens: this.estimateTokens(this.renderSymbol(sym, input.config.compact)),
-    }))
+    let omittedSymbols = 0
+    let omittedDeps = 0
+
+    // Vòng 3-3: cắt theo khoảng cách điểm (budget là trần, không phải mục tiêu)
+    let kept = sorted
+    if (sorted.length > 1) {
+      const maxScore = sorted[0]?.score ?? 0
+      if (maxScore > 0) {
+        const floor = maxScore * cutoffRatio
+        kept = sorted.filter((entry, i) => i === 0 || entry.score >= floor)
+        omittedSymbols += sorted.length - kept.length
+      }
+    }
+
+    // Vòng 3-1: bỏ symbol lồng nhau — method đã nằm trong fullSource của class
+    // thì in 2 lần. Chỉ dedup khi container render full; class bị truncate
+    // (chỉ còn danh sách member) thì method vẫn giữ nguyên giá trị.
+    const deduped: typeof kept = []
+    for (const entry of kept) {
+      if (deduped.some((k) => this.containsSymbol(k.sym, entry.sym) && this.rendersFull(k.sym))) {
+        omittedSymbols++
+        continue
+      }
+      if (this.rendersFull(entry.sym)) {
+        for (let i = deduped.length - 1; i >= 0; i--) {
+          const k = deduped[i]
+          if (k && this.containsSymbol(entry.sym, k.sym)) {
+            deduped.splice(i, 1)
+            omittedSymbols++
+          }
+        }
+      }
+      deduped.push(entry)
+    }
+
+    // Vòng 3-2 + 3-4: render theo hạng — top-N full body, còn lại signature,
+    // symbol đã gửi rồi chỉ còn dòng tham chiếu.
+    const symbolBlocks = deduped.map((entry, rank) => {
+      let text: string
+      if (alreadySent.has(entry.sym.nodeId)) {
+        text = this.renderAlreadySent(entry.sym)
+      } else if (rank < fullTopN) {
+        text = this.renderFull(entry.sym, input.config.compact)
+      } else {
+        text = this.renderSignatureOnly(entry.sym)
+      }
+      return {
+        nodeId: entry.sym.nodeId,
+        filePath: entry.sym.filePath,
+        score: entry.score,
+        text,
+        tokens: this.estimateTokens(text),
+      }
+    })
 
     const depBlocks = (input.config.expandDeps ? input.deps : []).map((dep) => {
       const raw = input.config.depSymbolsIncludeBody ? dep.symbol.fullSource : dep.signatureOnly
@@ -62,8 +122,6 @@ export class ContextBuilder {
     // Ưu tiên: direct theo score → deps. Bỏ deps trước, rồi direct điểm thấp.
     let keptSymbols = [...symbolBlocks]
     let keptDeps = [...depBlocks]
-    let omittedSymbols = 0
-    let omittedDeps = 0
 
     const totalTokens = () =>
       keptSymbols.reduce((sum, b) => sum + b.tokens, 0) +
@@ -92,10 +150,9 @@ export class ContextBuilder {
     }
 
     for (const [filePath, blocks] of symbolsByFile.entries()) {
-      const fileNode = input.selectedFiles.find((f) => f.filePath === filePath)
-      const fileHeader = `=== ${filePath} ===`
-      const fileSummary = fileNode ? `// ${fileNode.shortSummary}` : ""
-      sections.push([fileHeader, fileSummary, ...blocks.map((b) => b.text)].filter(Boolean).join("\n"))
+      // Vòng 3-5: bỏ dòng summary cấp file — khi đã có source của symbol
+      // thì summary file (~30-50 tokens) gần như không thêm thông tin.
+      sections.push([`=== ${filePath} ===`, ...blocks.map((b) => b.text)].join("\n"))
     }
 
     if (keptDeps.length > 0) {
@@ -114,7 +171,7 @@ export class ContextBuilder {
     }
 
     if (omittedSymbols > 0 || omittedDeps > 0) {
-      sections.push(`// omitted: ${omittedSymbols} symbols, ${omittedDeps} deps (token limit)`)
+      sections.push(`// omitted: ${omittedSymbols} symbols, ${omittedDeps} deps (budget/cutoff/dedup)`)
     }
 
     const context = sections.join("\n\n")
@@ -122,12 +179,40 @@ export class ContextBuilder {
     return { context, estimatedTokens }
   }
 
-  private renderSymbol(sym: SymbolNode, compact = false): string {
+  /** Vòng 3-1: outer chứa inner khi cùng file và line range bao trọn (strict —
+   *  cùng range thì là 2 symbol ngang hàng, không dedup).
+   */
+  private containsSymbol(outer: SymbolNode, inner: SymbolNode): boolean {
+    return (
+      outer.nodeId !== inner.nodeId &&
+      outer.filePath === inner.filePath &&
+      outer.startLine <= inner.startLine &&
+      outer.endLine >= inner.endLine &&
+      (outer.startLine < inner.startLine || outer.endLine > inner.endLine)
+    )
+  }
+
+  /** Container có render đủ full source không (không bị truncate P0-4). */
+  private rendersFull(sym: SymbolNode): boolean {
+    return this.estimateTokens(sym.fullSource) <= MAX_SYMBOL_TOKENS
+  }
+
+  private renderFull(sym: SymbolNode, compact = false): string {
     const comment = sym.shortSummary !== sym.signature ? `// ${sym.shortSummary}\n` : ""
     const location = `// ${sym.filePath}:L${sym.startLine}-L${sym.endLine}`
     const raw = this.truncateLargeSymbol(sym)
     const source = compact ? this.compactSource(raw) : raw
     return `${comment}${source}\n${location}`
+  }
+
+  /** Vòng 3-2: hạng thấp chỉ in signature + vị trí để agent hỏi tiếp khi cần. */
+  private renderSignatureOnly(sym: SymbolNode): string {
+    return `${sym.signature}\n// ${sym.filePath}:L${sym.startLine}-L${sym.endLine}`
+  }
+
+  /** Vòng 3-4: symbol phía nhận đã có — chỉ còn dòng tham chiếu. */
+  private renderAlreadySent(sym: SymbolNode): string {
+    return `// ${sym.title} — already sent (${sym.filePath}:L${sym.startLine}-L${sym.endLine})`
   }
 
   /** P0-4: rút gọn symbol vượt MAX_SYMBOL_TOKENS */
